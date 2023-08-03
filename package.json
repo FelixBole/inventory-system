@@ -1,0 +1,27 @@
+{
+	"name": "com.slax.inventorysystem",
+	"version": "0.1.2",
+	"displayName": "Inventory System",
+	"description": "A simple Inventory System",
+	"unity": "2019.1",
+	"unityRelease": "0b5",
+	"keywords": [
+		"InventorySystem",
+		"Inventory",
+		"Slax"
+	],
+	"author": {
+		"name": "Felix Bole",
+		"email": "felix.slax@gmail.com"
+	},
+	"dependencies": {
+		"com.unity.textmeshpro": "^3.0.6"
+	},
+	"samples": [
+		{
+			"displayName": "Example Elements & UI",
+			"description": "Sample Elements for a very ultra basic UI",
+			"path": "Samples/InventorySystemExamples"
+		}
+	]
+}
