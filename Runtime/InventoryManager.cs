@@ -7,7 +7,7 @@ namespace Slax.Inventory
 {
     public class InventoryManager : MonoBehaviour
     {
-        [SerializeField] private InventorySO _inventory;
+        [SerializeField] protected InventorySO _inventory;
         public InventorySO Inventory => _inventory;
 
         /// <summary>Fired when the CURRENT inventory sells an item</summary>
@@ -19,27 +19,29 @@ namespace Slax.Inventory
         /// <summary>Fired when the CURRENT inventory buys an item</summary>
         public event UnityAction<InventoryUpdate> OnBuy = delegate { };
 
-        public void AddItem(ItemSO item, int amount)
+        public virtual InventoryUpdate AddItem(ItemSO item, int amount)
         {
             _inventory.Add(item, amount);
 
             ItemStack stack = FindStack(item);
             InventoryUpdate iu = new InventoryUpdate(stack, 0f, true, _inventory);
+            return iu;
         }
 
-        public void RemoveItem(ItemSO item, int amount)
+        public virtual InventoryUpdate RemoveItem(ItemSO item, int amount)
         {
             _inventory.Remove(item, amount);
 
             ItemStack stack = new ItemStack(item, amount);
             InventoryUpdate iu = new InventoryUpdate(stack, 0f, FindStack(item) != null, _inventory);
             OnRemove.Invoke(iu);
+            return iu;
         }
 
         /// <summary>
         /// Sells item(s) from this inventory
         /// </summary>
-        public float Sell(ItemSO item, int amount)
+        public virtual InventoryUpdate Sell(ItemSO item, int amount)
         {
             if (!_inventory.Contains(item)) throw new MissingItemException();
             int remaining = _inventory.Count(item);
@@ -48,9 +50,11 @@ namespace Slax.Inventory
             float price = item.Price * amount * _inventory.SellPriceMultiplier;
             _inventory.UpdateCurrency(price);
 
-            OnSell.Invoke(new InventoryUpdate());
+            InventoryUpdate iu = new InventoryUpdate(new ItemStack(item, amount), price, FindStack(item) != null, _inventory);
 
-            return price;
+            OnSell.Invoke(iu);
+
+            return iu;
         }
 
         /// <summary>
@@ -58,10 +62,10 @@ namespace Slax.Inventory
         /// The price multiplier comes from the settings of the inventory
         /// settings this inventory is buying from.
         /// </summary>
-        public float Buy(ItemSO item, int amount, float priceMultiplier)
+        public virtual InventoryUpdate Buy(ItemSO item, int amount, float priceMultiplier)
         {
             float price = item.Price * amount * priceMultiplier;
-            if (price > _inventory.Currency) return 0;
+            if (price > _inventory.Currency) throw new NotEnoughCurrencyException();
 
             _inventory.UpdateCurrency(-price);
             _inventory.Add(item, amount);
@@ -71,14 +75,14 @@ namespace Slax.Inventory
 
             OnBuy.Invoke(iu);
 
-            return price;
+            return iu;
         }
 
         /// <summary>
         /// When this inventory buys an item from another inventory for free
         /// thus not taking into consideration the pricing of the external inventory
         /// </summary>
-        public void BuyForFree(ItemSO item, int amount)
+        public virtual InventoryUpdate BuyForFree(ItemSO item, int amount)
         {
             _inventory.Add(item, amount);
 
@@ -86,9 +90,10 @@ namespace Slax.Inventory
             InventoryUpdate iu = new InventoryUpdate(stack, 0f, true, _inventory);
 
             OnBuy.Invoke(iu);
+            return iu;
         }
 
-        private ItemStack FindStack(ItemSO item) => _inventory.Items.Find(o => o.Item == item);
+        protected ItemStack FindStack(ItemSO item) => _inventory.Items.Find(o => o.Item == item);
     }
 
     public struct InventoryUpdate
