@@ -1,6 +1,6 @@
 {
 	"name": "com.slax.inventorysystem",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"displayName": "Inventory System",
 	"description": "A simple Inventory System",
 	"unity": "2019.1",
@@ -24,11 +24,11 @@
 		"Samples/**",
 		"Samples.meta",
 		"CHANGELOG.md",
-		"CHANGELOG.meta",
+		"CHANGELOG.md.meta",
 		"LICENSE.md",
-		"LICENSE.meta",
+		"LICENSE.md.meta",
 		"README.md",
-		"README.meta",
+		"README.md.meta",
 		"package.json.meta"
 	],
 	"dependencies": {
