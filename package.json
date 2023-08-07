@@ -4,16 +4,33 @@
 	"displayName": "Inventory System",
 	"description": "A simple Inventory System",
 	"unity": "2019.1",
-	"unityRelease": "0b5",
 	"keywords": [
 		"InventorySystem",
 		"Inventory",
 		"Slax"
 	],
 	"author": {
+		"url": "https://github.com/FelixBole",
 		"name": "Felix Bole",
 		"email": "felix.slax@gmail.com"
 	},
+	"files": [
+		"Documentation/**",
+		"Documentation.meta",
+		"Editor/**",
+		"Editor.meta",
+		"Runtime/**",
+		"Runtime.meta",
+		"Samples/**",
+		"Samples.meta",
+		"CHANGELOG.md",
+		"CHANGELOG.meta",
+		"LICENSE.md",
+		"LICENSE.meta",
+		"README.md",
+		"README.meta",
+		"package.json.meta"
+	],
 	"dependencies": {
 		"com.unity.textmeshpro": "^3.0.6"
 	},
