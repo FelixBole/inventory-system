@@ -6,15 +6,15 @@ namespace Slax.Inventory
 {
     public class UIInventory : MonoBehaviour
     {
-        [SerializeField] private InventorySO _inventory;
-        [SerializeField] private List<UIInventoryTab> _tabs = new List<UIInventoryTab>();
-        [SerializeField] private UIInventoryItemStack _itemStackPrefab;
+        [SerializeField] protected InventorySO _inventory;
+        [SerializeField] protected List<UIInventoryTab> _tabs = new List<UIInventoryTab>();
+        [SerializeField] protected UIInventoryItemStack _itemStackPrefab;
 
         [Header("Tab Settings")]
-        [SerializeField] private Color _inactiveTabColor;
-        [SerializeField] private Color _activeTabColor;
+        [SerializeField] protected Color _inactiveTabColor;
+        [SerializeField] protected Color _activeTabColor;
 
-        private UIInventoryTab _activeTab;
+        protected UIInventoryTab _activeTab;
 
         void OnEnable()
         {
@@ -33,7 +33,7 @@ namespace Slax.Inventory
             DrawActiveTab();
         }
 
-        private void DrawActiveTab()
+        protected void DrawActiveTab()
         {
             _activeTab.gameObject.SetActive(true);
             _activeTab.Tab.image.color = _activeTabColor;
@@ -49,7 +49,7 @@ namespace Slax.Inventory
 
         }
 
-        private void Reset()
+        protected void Reset()
         {
             foreach (UIInventoryTab t in _tabs)
             {

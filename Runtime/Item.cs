@@ -7,7 +7,7 @@ namespace Slax.Inventory
 {
     public class Item : MonoBehaviour
     {
-        [SerializeField] private ItemSO _item;
+        [SerializeField] protected ItemSO _item;
 
         public event UnityAction<ItemSO> OnPickUp = delegate { };
 

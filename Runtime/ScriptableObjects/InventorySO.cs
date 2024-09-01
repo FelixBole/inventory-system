@@ -17,17 +17,17 @@ namespace Slax.Inventory
         public float SellPriceMultiplier = 1f;
 
         [Header("Inventory Content")]
-        [SerializeField] private List<ItemStack> _items = new List<ItemStack>();
+        [SerializeField] protected List<ItemStack> _items = new List<ItemStack>();
         public List<ItemStack> Items => _items;
         public bool IsEmpty => _items.Count == 0;
 
-        [SerializeField] private List<ItemStack> _defaultItems = new List<ItemStack>();
+        [SerializeField] protected List<ItemStack> _defaultItems = new List<ItemStack>();
 
         [Header("Currency settings")]
-        [SerializeField] private float _currency = 0;
+        [SerializeField] protected float _currency = 0;
         public float Currency => _currency;
-        [SerializeField] private float _maxCurrency = 999999999f;
-        [SerializeField] private bool _allowSubZeroCurrency = false;
+        [SerializeField] protected float _maxCurrency = 999999999f;
+        [SerializeField] protected bool _allowSubZeroCurrency = false;
 
         [Header("Size / Weight settings")]
         public bool UseWeight = false;

@@ -5,7 +5,7 @@ namespace Slax.Inventory
     [System.Serializable]
     public class ItemStack
     {
-        [SerializeField] private ItemSO _item;
+        [SerializeField] protected ItemSO _item;
         public ItemSO Item => _item;
 
         public int Amount;

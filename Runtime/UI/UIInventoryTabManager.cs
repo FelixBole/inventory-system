@@ -8,11 +8,11 @@ namespace Slax.Inventory
 
     public class UIInventoryTabManager : MonoBehaviour
     {
-        [SerializeField] private List<UIInventoryTab> _tabs = new List<UIInventoryTab>();
+        [SerializeField] protected List<UIInventoryTab> _tabs = new List<UIInventoryTab>();
 
         [Header("Settings")]
-        [SerializeField] private Color _inactive;
-        [SerializeField] private Color _active;
+        [SerializeField] protected Color _inactive;
+        [SerializeField] protected Color _active;
 
         void OnEnable()
         {

@@ -8,10 +8,10 @@ namespace Slax.Inventory
 {
     public class UIInventoryItemStack : MonoBehaviour
     {
-        [SerializeField] private Image _spriteImage;
-        [SerializeField] private TextMeshProUGUI _amountText;
-        private ItemSO _item;
-        private int _amount;
+        [SerializeField] protected Image _spriteImage;
+        [SerializeField] protected TextMeshProUGUI _amountText;
+        protected ItemSO _item;
+        protected int _amount;
 
         public void Init(ItemSO item, int amount)
         {

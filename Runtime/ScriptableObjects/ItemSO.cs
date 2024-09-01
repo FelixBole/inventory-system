@@ -33,32 +33,32 @@ namespace Slax.Inventory
     [CreateAssetMenu(menuName = "Slax/Inventory/Item")]
     public class ItemSO : ScriptableObject
     {
-        [SerializeField] private string _id;
+        [SerializeField] protected string _id;
         public string ID => _id;
 
-        [SerializeField] private string _name;
+        [SerializeField] protected string _name;
         public string Name => _name;
 
-        [SerializeField] private string _description;
+        [SerializeField] protected string _description;
         public string Description => _description;
 
-        [SerializeField] private Sprite _previewSprite;
+        [SerializeField] protected Sprite _previewSprite;
         public Sprite PreviewSprite => _previewSprite;
 
-        [SerializeField] private List<ItemActionType> _actionTypes = new List<ItemActionType>();
+        [SerializeField] protected List<ItemActionType> _actionTypes = new List<ItemActionType>();
         public List<ItemActionType> ActionTypes => _actionTypes;
-        [SerializeField] private List<ItemTabType> _tabTypes = new List<ItemTabType>();
+        [SerializeField] protected List<ItemTabType> _tabTypes = new List<ItemTabType>();
         public List<ItemTabType> TabTypes => _tabTypes;
 
-        [SerializeField] private GameObject _prefab;
+        [SerializeField] protected GameObject _prefab;
         public GameObject Prefab => _prefab;
 
-        [SerializeField] private int _price;
+        [SerializeField] protected int _price;
         public int Price => _price;
 
         [Header("Loot settings")]
-        [SerializeField] private int _minDrops = 1;
-        [SerializeField] private int _maxDrops = 10;
+        [SerializeField] protected int _minDrops = 1;
+        [SerializeField] protected int _maxDrops = 10;
 
         public bool HasActionType(ItemActionType actionType) => _actionTypes.Contains(actionType);
         public bool HasTabType(ItemTabType tabType) => _tabTypes.Contains(tabType);
@@ -70,7 +70,7 @@ namespace Slax.Inventory
 
 
         // Serialization
-        [SerializeField, HideInInspector] private string _guid;
+        [SerializeField, HideInInspector] protected string _guid;
         public string Guid => _guid;
 
 #if UNITY_EDITOR
