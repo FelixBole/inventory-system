@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,44 +6,49 @@ namespace Slax.Inventory
 {
     public class UIInventoryTab : MonoBehaviour
     {
-        public string Name;
-        public string Description;
-        public Sprite Sprite;
-        public ItemTabType Type;
+        public InventoryTabConfigSO Config;
         public Button Tab;
         public Image Image;
+        public GridLayoutGroup ItemSlotContainer;
 
-        public void Draw(InventorySO inventory, UIInventoryItemStack prefab)
+        protected List<UIInventoryItemSlot> _slots = new List<UIInventoryItemSlot>();
+
+        void OnEnable()
+        {
+            if (Config == null) return;
+            Image.sprite = Config.TabType.Icon;
+            Image.color = Config.TabType.Color;
+        }
+
+        /// <summary>
+        /// Draw items matching the tab's type.
+        /// </summary>
+        public void Draw(RuntimeInventory runtimeInventory, UIInventoryItemSlot prefab)
         {
             Clear();
-            List<ItemStack> stacks = inventory.Items.FindAll(o => o.Item.TabTypes.Contains(Type));
-            
-            foreach (var stack in stacks)
+
+            // Get the slots associated with the current tab type
+            List<InventorySlot> slots = runtimeInventory.GetSlotsForTab(Config.TabType);
+
+            foreach (var slot in slots)
             {
-                var s = Instantiate(prefab, new Vector3(), Quaternion.identity);
-                s.Init(stack.Item, stack.Amount);
-                s.transform.SetParent(transform, false);
+                var s = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+                s.Init(slot);
+                s.transform.SetParent(ItemSlotContainer.transform, false);
+                _slots.Add(s);
             }
         }
 
-        public void DrawAll(InventorySO inventory, UIInventoryItemStack prefab)
-        {
-            Clear();
-            foreach (ItemStack stack in inventory.Items)
-            {
-                var s = Instantiate(prefab, new Vector3(), Quaternion.identity);
-                s.Init(stack.Item, stack.Amount);
-                s.transform.SetParent(transform, false);
-            }
-        }
-
+        /// <summary>
+        /// Clear the current UI tab.
+        /// </summary>
         public void Clear()
         {
-            for (int i = transform.childCount - 1; i >= 0; i--)
+            for (int i = 0; i < _slots.Count; i++)
             {
-                Transform child = transform.GetChild(i);
-                Destroy(child.gameObject);
+                Destroy(_slots[i].gameObject);
             }
+            _slots.Clear();
         }
     }
 }

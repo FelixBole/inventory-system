@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 784d4044b3cd29b49951ac90904f558d, type: 3}
+  m_Name: Demo_ItemLog
+  m_EditorClassIdentifier: 
+  _id: 1
+  _name: Log
+  _description: Basic Log
+  _previewSprite: {fileID: 21300000, guid: 588594924207a4743a796c26d51a3382, type: 3}
+  _actionTypes: 02000000030000000500000007000000
+  _tabTypes: 03000000
+  _prefab: {fileID: 0}
+  _price: 100
+  _minDrops: 1
+  _maxDrops: 10
+  _guid: 2d6d552edd400e24d81ffe3c1d5ccd42

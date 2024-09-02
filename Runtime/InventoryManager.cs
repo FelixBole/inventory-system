@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -7,8 +6,11 @@ namespace Slax.Inventory
 {
     public class InventoryManager : MonoBehaviour
     {
-        [SerializeField] protected InventorySO _inventory;
-        public InventorySO Inventory => _inventory;
+        [SerializeField] protected InventorySO _inventoryConfig;
+        private RuntimeInventory _runtimeInventory;
+
+        public InventorySO InventoryConfig => _inventoryConfig;
+        public RuntimeInventory RuntimeInventory => _runtimeInventory;
 
         /// <summary>Fired when the CURRENT inventory sells an item</summary>
         public event UnityAction<InventoryUpdate> OnSell = delegate { };
@@ -19,103 +21,92 @@ namespace Slax.Inventory
         /// <summary>Fired when the CURRENT inventory buys an item</summary>
         public event UnityAction<InventoryUpdate> OnBuy = delegate { };
 
-        public virtual InventoryUpdate AddItem(ItemSO item, int amount)
-        {
-            _inventory.Add(item, amount);
+        public UnityEvent<RuntimeInventory> OnInventoryChanged = new UnityEvent<RuntimeInventory>();
 
-            ItemStack stack = FindStack(item);
-            InventoryUpdate iu = new InventoryUpdate(stack, 0f, true, _inventory);
+        private void Start()
+        {
+            // Initialize the runtime inventory with the configuration data
+            _runtimeInventory = new RuntimeInventory(_inventoryConfig);
+            OnInventoryChanged?.Invoke(_runtimeInventory);
+        }
+
+        /// <summary>
+        /// Adds an item to a specified slot in a specified tab.
+        /// </summary>
+        public virtual InventoryUpdate AddItemToSlot(ItemTabTypeSO tabType, int slotIndex, ItemSO item, int amount)
+        {
+            _runtimeInventory.AddItemToSlot(tabType, slotIndex, item, amount);
+            var slots = _runtimeInventory.GetSlotsForTab(tabType);
+            var slot = slots != null && slotIndex >= 0 && slotIndex < slots.Count ? slots[slotIndex] : null;
+
+            InventoryUpdate iu = new InventoryUpdate(slot, slotIndex, slot != null && !slot.IsEmpty, _inventoryConfig, InventoryUpdateType.Added);
+            OnAdd.Invoke(iu);
             return iu;
         }
 
-        public virtual InventoryUpdate RemoveItem(ItemSO item, int amount)
+        /// <summary>
+        /// Removes an item from a specified slot in a specified tab.
+        /// </summary>
+        public virtual InventoryUpdate RemoveItemFromSlot(ItemTabTypeSO tabType, int slotIndex, int amount)
         {
-            _inventory.Remove(item, amount);
+            _runtimeInventory.RemoveItemFromSlot(tabType, slotIndex, amount);
+            var slots = _runtimeInventory.GetSlotsForTab(tabType);
+            var slot = slots != null && slotIndex >= 0 && slotIndex < slots.Count ? slots[slotIndex] : null;
 
-            ItemStack stack = new ItemStack(item, amount);
-            InventoryUpdate iu = new InventoryUpdate(stack, 0f, FindStack(item) != null, _inventory);
+            InventoryUpdate iu = new InventoryUpdate(slot, slotIndex, slot != null && !slot.IsEmpty, _inventoryConfig, InventoryUpdateType.Removed);
             OnRemove.Invoke(iu);
             return iu;
         }
 
         /// <summary>
-        /// Sells item(s) from this inventory
+        /// Finds the first slot containing the specified item in the given tab.
         /// </summary>
-        public virtual InventoryUpdate Sell(ItemSO item, int amount)
+        protected InventorySlot FindSlot(ItemTabTypeSO tabType, ItemSO item)
         {
-            if (!_inventory.Contains(item)) throw new MissingItemException();
-            int remaining = _inventory.Count(item);
-            if (amount > remaining) amount = remaining;
-
-            float price = item.Price * amount * _inventory.SellPriceMultiplier;
-            _inventory.UpdateCurrency(price);
-
-            InventoryUpdate iu = new InventoryUpdate(new ItemStack(item, amount), price, FindStack(item) != null, _inventory);
-
-            OnSell.Invoke(iu);
-
-            return iu;
+            return _runtimeInventory.FindSlot(tabType, item);
         }
 
         /// <summary>
-        /// When this inventory buys an item from another inventory.
-        /// The price multiplier comes from the settings of the inventory
-        /// settings this inventory is buying from.
+        /// Loads the inventory state from saved data.
         /// </summary>
-        public virtual InventoryUpdate Buy(ItemSO item, int amount, float priceMultiplier)
+        public void LoadInventory(List<ItemSO> allItems)
         {
-            float price = item.Price * amount * priceMultiplier;
-            if (price > _inventory.Currency) throw new NotEnoughCurrencyException();
-
-            _inventory.UpdateCurrency(-price);
-            _inventory.Add(item, amount);
-
-            ItemStack stack = new ItemStack(item, amount);
-            InventoryUpdate iu = new InventoryUpdate(stack, price, true, _inventory);
-
-            OnBuy.Invoke(iu);
-
-            return iu;
+            _runtimeInventory.LoadInventory(allItems);
         }
 
         /// <summary>
-        /// When this inventory buys an item from another inventory for free
-        /// thus not taking into consideration the pricing of the external inventory
+        /// Saves the current inventory state.
         /// </summary>
-        public virtual InventoryUpdate BuyForFree(ItemSO item, int amount)
+        public void SaveInventory()
         {
-            _inventory.Add(item, amount);
-
-            ItemStack stack = new ItemStack(item, amount);
-            InventoryUpdate iu = new InventoryUpdate(stack, 0f, true, _inventory);
-
-            OnBuy.Invoke(iu);
-            return iu;
+            _runtimeInventory.SaveInventory();
         }
-
-        protected ItemStack FindStack(ItemSO item) => _inventory.Items.Find(o => o.Item == item);
     }
 
     public struct InventoryUpdate
     {
-        /// <summary>The Items concerned by the update</summary>
-        public ItemStack Stack;
+        /// <summary>The slot concerned by the update</summary>
+        public InventorySlot Slot;
 
-        /// <summary>Price of the transaction if there was one, set to 0 if none happened</summary>
-        public float Price;
+        /// <summary>The index of the slot that was updated</summary>
+        public int SlotIndex;
 
         /// <summary>If the item is remaining in the inventory firing the event</summary>
         public bool Remaining;
 
-        /// <summary>The current inventory</summary>
+        /// <summary>The current inventory configuration (InventorySO)</summary>
         public InventorySO Inventory;
 
-        public InventoryUpdate(ItemStack stack, float price, bool remaining, InventorySO inventory)
+        /// <summary>The type of update (e.g., Added, Removed, Sold, Bought)</summary>
+        public InventoryUpdateType UpdateType;
+
+        public InventoryUpdate(InventorySlot slot, int slotIndex, bool remaining, InventorySO inventory, InventoryUpdateType updateType)
         {
-            this.Stack = stack;
-            this.Price = price;
+            this.Slot = slot;
+            this.SlotIndex = slotIndex;
             this.Remaining = remaining;
             this.Inventory = inventory;
+            this.UpdateType = updateType;
         }
     }
 }

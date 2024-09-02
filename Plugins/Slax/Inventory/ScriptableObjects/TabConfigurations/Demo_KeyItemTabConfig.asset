@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acaffcde2f3735a4faa88db5b9830dcd, type: 3}
+  m_Name: Demo_KeyItemTabConfig
+  m_EditorClassIdentifier: 
+  _tabType: {fileID: 11400000, guid: 46eb6815848c8374f88a6872b8fd4ce5, type: 2}
+  _slotUnlockStates:
+  - {fileID: 11400000, guid: d671ece7dd04e3d48ba92e28b256a91b, type: 2}

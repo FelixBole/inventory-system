@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,56 +5,65 @@ namespace Slax.Inventory
 {
     public class UIInventory : MonoBehaviour
     {
-        [SerializeField] protected InventorySO _inventory;
-        [SerializeField] protected List<UIInventoryTab> _tabs = new List<UIInventoryTab>();
-        [SerializeField] protected UIInventoryItemStack _itemStackPrefab;
+        [SerializeField] protected List<UIInventoryTab> _uiTabs = new List<UIInventoryTab>();
+        [SerializeField] protected UIInventoryItemSlot _itemSlotPrefab;
 
         [Header("Tab Settings")]
         [SerializeField] protected Color _inactiveTabColor;
         [SerializeField] protected Color _activeTabColor;
 
         protected UIInventoryTab _activeTab;
+        protected RuntimeInventory _inventory = null;
 
-        void OnEnable()
+        protected void OnDisable()
         {
-            if (_tabs.Count == 0) return;
+            if (_inventory != null)
+            {
+                _inventory.OnInventoryChanged -= RedrawInventory;
+            }
+        }
 
-            Reset();
+        public void Init(RuntimeInventory inventory)
+        {
+            _inventory = inventory;
+            _inventory.OnInventoryChanged += RedrawInventory;
+            _activeTab = _uiTabs.Count > 0 ? _uiTabs[0] : null;
 
-            _activeTab = _tabs[0];
+            foreach (var tab in _uiTabs)
+            {
+                tab.Tab.onClick.AddListener(() => {
+                    ChangeTab(tab);
+                });
+            }
+
             DrawActiveTab();
         }
 
         public void ChangeTab(UIInventoryTab tab)
         {
+            if (_activeTab != null)
+            {
+                _activeTab.Clear();
+            }
             _activeTab = tab;
-            Reset();
+            DrawActiveTab();
+        }
+
+        protected void RedrawInventory(RuntimeInventory inventory)
+        {
             DrawActiveTab();
         }
 
         protected void DrawActiveTab()
         {
-            _activeTab.gameObject.SetActive(true);
-            _activeTab.Tab.image.color = _activeTabColor;
+            if (_activeTab == null || _inventory == null) return;
 
-            if (_activeTab.Type == ItemTabType.MIXED)
-            {
-                _activeTab.DrawAll(_inventory, _itemStackPrefab);
-            }
-            else
-            {
-                _activeTab.Draw(_inventory, _itemStackPrefab);
-            }
-
+            _activeTab.Draw(_inventory, _itemSlotPrefab);
         }
 
-        protected void Reset()
+        public void Dlg()
         {
-            foreach (UIInventoryTab t in _tabs)
-            {
-                t.Tab.image.color = _inactiveTabColor;
-                t.gameObject.SetActive(false);
-            }
+            Debug.Log("Clcked");
         }
     }
 }
