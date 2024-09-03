@@ -22,8 +22,8 @@ namespace Slax.Inventory
         [SerializeField] protected List<ItemActionTypeSO> _actionTypes = new List<ItemActionTypeSO>();
         public List<ItemActionTypeSO> ActionTypes => _actionTypes;
 
-        [SerializeField] protected List<ItemTabTypeSO> _tabTypes = new List<ItemTabTypeSO>();
-        public List<ItemTabTypeSO> TabTypes => _tabTypes;
+        [SerializeField] protected List<InventoryTabConfigSO> _tabConfigs = new List<InventoryTabConfigSO>();
+        public List<InventoryTabConfigSO> TabConfigs => _tabConfigs;
 
         [SerializeField] protected GameObject _prefab;
         public GameObject Prefab => _prefab;
@@ -37,7 +37,7 @@ namespace Slax.Inventory
         public float Weight => _weight;
 
         public bool HasActionType(ItemActionTypeSO actionType) => _actionTypes.Contains(actionType);
-        public bool HasTabType(ItemTabTypeSO tabType) => _tabTypes.Contains(tabType);
+        public bool HasTabConfig(InventoryTabConfigSO tabConfig) => _tabConfigs.Contains(tabConfig);
         public int GetRandomDrops() => Random.Range(_minDrops, _maxDrops);
         public int GetRandomDrops(float multiplier) => Random.Range(_minDrops, Mathf.FloorToInt(_maxDrops * multiplier));
         public int GetRandomDrops(int overrideMinDrops) => Random.Range(overrideMinDrops, _maxDrops);

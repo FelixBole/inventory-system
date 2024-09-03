@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -6,6 +7,8 @@ namespace Slax.Inventory.Editor
     [CustomEditor(typeof(InventorySO))]
     public class InventorySOEditor : UnityEditor.Editor
     {
+        private InventorySO _inventory;
+
         private SerializedProperty _nameProperty;
         private SerializedProperty _tabConfigsProperty;
 
@@ -15,9 +18,15 @@ namespace Slax.Inventory.Editor
 
         private bool _extensionsFoldout = true;
         private bool _weightFoldout = false;
+        private bool _useFixedSlotsFoldout = false;
 
         private void OnEnable()
         {
+            _inventory = (InventorySO)target;
+            _extensionsFoldout = true;
+            _weightFoldout = _inventory.UseWeight;
+            _useFixedSlotsFoldout = _inventory.UseFixedSlots;
+
             // Initialize serialized properties
             _nameProperty = serializedObject.FindProperty("Name");
             _tabConfigsProperty = serializedObject.FindProperty("_tabConfigs");
@@ -48,6 +57,52 @@ namespace Slax.Inventory.Editor
         private void DrawTabConfigs()
         {
             EditorGUILayout.PropertyField(_tabConfigsProperty, new GUIContent("Tab Configurations"), true);
+
+            if (_inventory.TabConfigs.Count == 0)
+            {
+                EditorGUILayout.HelpBox("No Tab Configurations assigned. Please assign Tab Configurations to create and manage the inventory data.", MessageType.Warning);
+                return;
+            }
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUI.indentLevel++;
+
+            // Display the number of slots in each tab
+            for (int i = 0; i < _tabConfigsProperty.arraySize; i++)
+            {
+                SerializedProperty tabConfig = _tabConfigsProperty.GetArrayElementAtIndex(i);
+                var tab = (InventoryTabConfigSO)tabConfig.objectReferenceValue;
+                if (tab == null) continue;
+
+                // Sum all the tab unlock states slots
+                var sumSlots = tab.SlotUnlockStates.Sum(s => s.AdditionalSlots);
+
+                var str = $"{tab.name}: {tab.SlotUnlockStates.Count} Unlock State | {sumSlots} Total Slots";
+                
+                EditorGUILayout.LabelField(str);
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawUseFixedSlots()
+        {
+            _useFixedSlotsFoldout = EditorGUILayout.Foldout(_useFixedSlotsFoldout, "Use Fixed Slots", true);
+            if (!_useFixedSlotsFoldout) return;
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("_useFixedSlots"), new GUIContent("Use Fixed Slots"));
+            if (_inventory.UseFixedSlots)
+            {
+                EditorGUILayout.HelpBox("Use Fixed Slots enabled: The inventory slots will not be re-arranged when an item is removed and the saved slot index will be used to place the item.", MessageType.None);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Use Fixed Slots disabled: The inventory slots will be re-arranged when an item is removed.", MessageType.None);
+            }
+            EditorGUI.indentLevel--;
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawExtensions()
@@ -59,6 +114,8 @@ namespace Slax.Inventory.Editor
 
                 // Weight System
                 DrawWeightExtension();
+
+                DrawUseFixedSlots();
 
                 EditorGUI.indentLevel--;
             }

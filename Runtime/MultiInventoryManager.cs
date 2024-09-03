@@ -1,14 +1,22 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Events;
 
 namespace Slax.Inventory
 {
+    /// <summary>
+    /// Manages multiple inventories.
+    /// Kept for reference but not really useful. It's better to use individual
+    /// inventory managers for each inventory.
+    /// </summary>
     public class MultiInventoryManager : MonoBehaviour
     {
         [SerializeField] protected List<InventorySO> _inventoryConfigs = new List<InventorySO>();
         protected List<RuntimeInventory> _runtimeInventories = new List<RuntimeInventory>();
 
-        protected IInventorySaveSystem _saveSystem;
+        [SerializeField] protected InventorySaveSystemSO _saveSystem;
+
+        public UnityAction<List<RuntimeInventory>> OnAllInventoriesLoaded = delegate { };
 
         protected void Start()
         {
@@ -24,9 +32,9 @@ namespace Slax.Inventory
         /// If this method is not called, or if null is passed, the default
         /// save system will be used.
         /// </summary>
-        public void SetSaveSystem(IInventorySaveSystem saveSystem)
+        public void SetSaveSystem(InventorySaveSystemSO saveSystem)
         {
-            _saveSystem = saveSystem ?? new DefaultInventorySaveSystem();
+            _saveSystem = saveSystem;
 
             // Apply the save system to all runtime inventories
             foreach (var runtimeInventory in _runtimeInventories)
@@ -55,6 +63,7 @@ namespace Slax.Inventory
             {
                 runtimeInventory.LoadInventory(allItems);
             }
+            OnAllInventoriesLoaded?.Invoke(_runtimeInventories);
         }
 
         /// <summary>

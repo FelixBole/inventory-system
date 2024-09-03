@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Events;
+using UnityEngine;
 
 namespace Slax.Inventory
 {
@@ -10,18 +12,20 @@ namespace Slax.Inventory
     [System.Serializable]
     public class RuntimeInventory
     {
-        protected Dictionary<ItemTabTypeSO, List<InventorySlot>> _slotsByTab;
-        public Dictionary<ItemTabTypeSO, List<InventorySlot>> SlotsByTab => _slotsByTab;
+        protected Dictionary<InventoryTabConfigSO, List<InventorySlot>> _slotsByTab;
+        public Dictionary<InventoryTabConfigSO, List<InventorySlot>> SlotsByTab => _slotsByTab;
 
-        protected Dictionary<ItemTabTypeSO, RuntimeInventoryTabConfig> _tabConfigs;
+        protected Dictionary<InventoryTabConfigSO, RuntimeInventoryTabConfig> _tabConfigs;
 
         protected InventorySO _inventoryConfig;
         public InventorySO InventoryConfig => _inventoryConfig;
 
-        protected IInventorySaveSystem _saveSystem = new DefaultInventorySaveSystem();
+        protected InventorySaveSystemSO _saveSystem;
 
         protected float _currentWeight = 0f;
         public float CurrentWeight => _currentWeight;
+
+        public List<string> InvalidItems { get; private set; } = new List<string>();
 
         /// <summary>
         /// Event triggered when an item cannot be added due to weight limit.
@@ -37,8 +41,8 @@ namespace Slax.Inventory
 
         public RuntimeInventory(InventorySO inventory)
         {
-            _slotsByTab = new Dictionary<ItemTabTypeSO, List<InventorySlot>>();
-            _tabConfigs = new Dictionary<ItemTabTypeSO, RuntimeInventoryTabConfig>();
+            _slotsByTab = new Dictionary<InventoryTabConfigSO, List<InventorySlot>>();
+            _tabConfigs = new Dictionary<InventoryTabConfigSO, RuntimeInventoryTabConfig>();
             _inventoryConfig = inventory;
 
             // Initialize slots and tab configurations based on the inventory configuration
@@ -46,17 +50,37 @@ namespace Slax.Inventory
         }
 
         /// <summary>
+        /// Cleans up the inventory by removing event listeners.
+        /// Should be called by the inventory manager onDisable.
+        /// </summary>
+        public void Cleanup()
+        {
+            foreach (var tab in _slotsByTab)
+            {
+                foreach (var slot in tab.Value)
+                {
+                    slot.OnSlotChanged -= HandleSlotChanged;
+                    slot.OnSlotLocked -= slot => OnInventoryChanged?.Invoke(this);
+                    slot.OnSlotUnlocked -= slot => OnInventoryChanged?.Invoke(this);
+                }
+            }
+        }
+
+        /// <summary>
         /// Initialize tabs and slots based on the InventorySO configuration.
         /// </summary>
-        protected void InitializeTabs()
+        protected void InitializeTabs(SerializedInventory saveData = null)
         {
             _slotsByTab.Clear();
             _tabConfigs.Clear();
 
             foreach (var tabConfig in _inventoryConfig.TabConfigs)
             {
-                var runtimeTabConfig = new RuntimeInventoryTabConfig(tabConfig);
-                _tabConfigs[tabConfig.TabType] = runtimeTabConfig;
+
+                SerializedTabUnlockState tabState = saveData?.UnlockedStatesByTab.FirstOrDefault(s => s.TabName == tabConfig.Name);
+                var runtimeTabConfig = new RuntimeInventoryTabConfig(tabConfig, tabState?.UnlockedStates);
+
+                _tabConfigs[tabConfig] = runtimeTabConfig;
 
                 var slots = new List<InventorySlot>();
                 for (int i = 0; i < runtimeTabConfig.MaxSlots; i++)
@@ -67,25 +91,66 @@ namespace Slax.Inventory
                         inventorySlot.LockSlot();
                     }
                     slots.Add(inventorySlot);
-                    inventorySlot.OnSlotChanged += slot => OnInventoryChanged?.Invoke(this);
+                    inventorySlot.OnSlotChanged += HandleSlotChanged;
                     inventorySlot.OnSlotLocked += slot => OnInventoryChanged?.Invoke(this);
                     inventorySlot.OnSlotUnlocked += slot => OnInventoryChanged?.Invoke(this);
                 }
-                _slotsByTab[tabConfig.TabType] = slots;
+                _slotsByTab[tabConfig] = slots;
             }
 
             OnInventoryChanged?.Invoke(this);
         }
 
         /// <summary>
-        /// Adds an item to a specific slot in a specific tab.
+        /// Adds an item to the first available slot in the first available tab.
+        /// Easy to use, but less efficient than the other overload add methods.
         /// </summary>
-        public void AddItemToSlot(ItemTabTypeSO tabType, int slotIndex, ItemSO item, int count = 1)
+        public void AddItemToSlot(ItemSO item, int count = 1)
         {
-            if (!_slotsByTab.ContainsKey(tabType))
+            var itemTab = item.TabConfigs.FirstOrDefault(t => _slotsByTab.ContainsKey(t));
+            if (itemTab != null)
+            {
+                AddItemToSlot(itemTab, item, count);
+            }
+        }
+
+        /// <summary>
+        /// Adds an item to the first available slot in a specific tab.
+        /// </summary>
+        public void AddItemToSlot(InventoryTabConfigSO tabConfig, ItemSO item, int count = 1)
+        {
+            if (!_slotsByTab.ContainsKey(tabConfig))
                 return;
 
-            RuntimeInventoryTabConfig config = GetTabConfig(tabType);
+            var existingSlot = FindSlot(tabConfig, item);
+            if (existingSlot != null)
+            {
+                int existingSlotIndex = _slotsByTab[tabConfig].IndexOf(existingSlot);
+                AddItemToSlot(tabConfig, existingSlotIndex, item, count);
+            }
+            else
+            {
+                int firstAvailableSlot = _slotsByTab[tabConfig].FindIndex(slot => slot.IsEmpty && !slot.IsLocked);
+                if (firstAvailableSlot >= 0)
+                {
+                    AddItemToSlot(tabConfig, firstAvailableSlot, item, count);
+                }
+                else
+                {
+                    OnSizeLimitReached?.Invoke(item, -1);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds an item to a specific slot in a specific tab.
+        /// </summary>
+        public void AddItemToSlot(InventoryTabConfigSO tabConfig, int slotIndex, ItemSO item, int count = 1)
+        {
+            if (!_slotsByTab.ContainsKey(tabConfig))
+                return;
+
+            RuntimeInventoryTabConfig config = GetTabConfig(tabConfig);
 
             if (config == null)
                 return;
@@ -107,7 +172,7 @@ namespace Slax.Inventory
                 _currentWeight += itemWeight;
             }
 
-            var slots = _slotsByTab[tabType];
+            var slots = _slotsByTab[tabConfig];
             if (slotIndex < 0 || slotIndex >= slots.Count)
                 return;
 
@@ -115,9 +180,26 @@ namespace Slax.Inventory
         }
 
         /// <summary>
+        /// Removes an item from the inventory.
+        /// Easier to use than the other remove methods, but less efficient.
+        /// </summary>
+        public void RemoveItemFromSlot(ItemSO item, int count = 1)
+        {
+            var itemTab = item.TabConfigs.FirstOrDefault(t => _slotsByTab.ContainsKey(t));
+            if (itemTab != null)
+            {
+                var slot = FindSlot(itemTab, item);
+                if (slot != null)
+                {
+                    RemoveItemFromSlot(itemTab, _slotsByTab[itemTab].IndexOf(slot), count);
+                }
+            }
+        }
+
+        /// <summary>
         /// Removes an item from a specific slot in a specific tab.
         /// </summary>
-        public void RemoveItemFromSlot(ItemTabTypeSO tabType, int slotIndex, int count = 1)
+        public void RemoveItemFromSlot(InventoryTabConfigSO tabType, int slotIndex, int count = 1)
         {
             if (!_slotsByTab.ContainsKey(tabType))
                 return;
@@ -139,37 +221,40 @@ namespace Slax.Inventory
         }
 
         /// <summary>
-        /// Gets the slots for a specific tab type.
+        /// Switches the slots at the specified indices in the specified tab.
         /// </summary>
-        public List<InventorySlot> GetSlotsForTab(ItemTabTypeSO tabType)
+        public void SwitchSlots(InventoryTabConfigSO tabConfig, InventorySlot slot1, InventorySlot slot2)
         {
-            return _slotsByTab.ContainsKey(tabType) ? _slotsByTab[tabType] : null;
-        }
+            if (!_slotsByTab.ContainsKey(tabConfig))
+                return;
 
-        /// <summary>
-        /// Finds the first slot containing the specified item in the given tab.
-        /// </summary>
-        public InventorySlot FindSlot(ItemTabTypeSO tabType, ItemSO item)
-        {
-            if (!_slotsByTab.ContainsKey(tabType)) return null;
+            var slots = _slotsByTab[tabConfig];
+            int index1 = slots.IndexOf(slot1);
+            int index2 = slots.IndexOf(slot2);
 
-            return _slotsByTab[tabType].Find(slot => slot.Item == item);
-        }
+            if (index1 < 0 || index2 < 0)
+                return;
 
-        /// <summary>
-        /// Gets the tab configuration for a specific tab type.
-        /// </summary>
-        public RuntimeInventoryTabConfig GetTabConfig(ItemTabTypeSO tabType)
-        {
-            return _tabConfigs.ContainsKey(tabType) ? _tabConfigs[tabType] : null;
+            var temp = slots[index1];
+            slots[index1] = slots[index2];
+            slots[index2] = temp;
+
+            if (!_inventoryConfig.UseFixedSlots)
+            {
+                RearrangeSlots(true);
+            }
+            else
+            {
+                OnInventoryChanged?.Invoke(this);
+            }
         }
 
         /// <summary>
         /// Unlocks additional slots for a specific tab.
         /// </summary>
-        public void UnlockSlotsForTab(ItemTabTypeSO tabType, SlotUnlockStateSO unlockState)
+        public void UnlockSlotsForTab(InventoryTabConfigSO tabConfig, SlotUnlockStateSO unlockState)
         {
-            var config = GetTabConfig(tabType);
+            var config = GetTabConfig(tabConfig);
             if (config != null)
             {
                 config.UnlockSlotState(unlockState);
@@ -179,27 +264,80 @@ namespace Slax.Inventory
         }
 
         /// <summary>
-        /// Creates a new save data structure for the inventory.
+        /// Reacts to a slot change event.
         /// </summary>
-        public SerializedInventory CreateNewSaveData()
+        protected void HandleSlotChanged(InventorySlot slot)
         {
-            var newInventoryData = new SerializedInventory
+            if (!_inventoryConfig.UseFixedSlots && slot.IsEmpty)
             {
-                InventoryName = _inventoryConfig.Name
-            };
+                RearrangeSlots(false);
+            }
+            OnInventoryChanged?.Invoke(this);
+        }
 
+        /// <summary>
+        /// Rearranges the slots in the inventory if the inventory does
+        /// not used the fixed slots extension.
+        /// </summary>
+        protected void RearrangeSlots(bool invokeInventoryChanged = true)
+        {
             foreach (var tab in _slotsByTab)
             {
-                // Initialize slots and unlock states based on the default configuration
-                var tabType = tab.Key;
-                var runtimeTabConfig = GetTabConfig(tabType);
-                if (runtimeTabConfig != null)
+                tab.Value.Sort((a, b) =>
                 {
-                    newInventoryData.UnlockedStatesByTab[tabType.Name] = runtimeTabConfig.GetSerializedSlotUnlockStates();
-                }
+                    // Priority 1: Non-empty unlocked slots come first
+                    if (!a.IsEmpty && !a.IsLocked && (b.IsEmpty || b.IsLocked)) return -1;
+                    if (!b.IsEmpty && !b.IsLocked && (a.IsEmpty || a.IsLocked)) return 1;
+
+                    // Priority 2: Empty unlocked slots come after non-empty unlocked
+                    if (a.IsEmpty && !a.IsLocked && (!b.IsEmpty || b.IsLocked)) return -1;
+                    if (b.IsEmpty && !b.IsLocked && (!a.IsEmpty || a.IsLocked)) return 1;
+
+                    // Priority 3: Non-empty locked slots come next
+                    if (!a.IsEmpty && a.IsLocked && (b.IsEmpty || !b.IsLocked)) return -1;
+                    if (!b.IsEmpty && b.IsLocked && (a.IsEmpty || !a.IsLocked)) return 1;
+
+                    // Priority 4: Empty locked slots come last
+                    if (a.IsEmpty && a.IsLocked) return 1;
+                    if (b.IsEmpty && b.IsLocked) return -1;
+
+                    return 0; // If both slots have the same state
+                });
             }
 
-            return newInventoryData;
+            if (invokeInventoryChanged) OnInventoryChanged?.Invoke(this);
+        }
+
+        #region Save/Load
+        /// <summary>
+        /// Allows the user to set a custom save system. 
+        /// Defaults to internal JSON save system.
+        /// </summary>
+        public void SetSaveSystem(InventorySaveSystemSO saveSystem)
+        {
+            _saveSystem = saveSystem;
+        }
+
+        /// <summary>
+        /// The default save system save method for the InventorySystem.
+        /// </summary>
+        public void SaveInventory()
+        {
+            var serializedInventory = GetSaveData();
+            _saveSystem.SaveInventory(serializedInventory, _inventoryConfig.Name);
+        }
+
+        /// <summary>
+        /// The default save system load method for the InventorySystem.
+        /// </summary>
+        public void LoadInventory(List<ItemSO> allItems)
+        {
+            var serializedInventory = _saveSystem.LoadInventory(_inventoryConfig.Name);
+            if (serializedInventory != null)
+            {
+                LoadSaveData(serializedInventory, allItems);
+            }
+            OnInventoryChanged?.Invoke(this);
         }
 
         /// <summary>
@@ -214,6 +352,7 @@ namespace Slax.Inventory
 
             foreach (var tab in _slotsByTab)
             {
+                int slotIndex = 0;
                 foreach (var slot in tab.Value)
                 {
                     if (slot.Item != null)
@@ -221,9 +360,12 @@ namespace Slax.Inventory
                         serializedInventory.Slots.Add(new SerializedInventorySlot
                         {
                             ItemID = slot.Item.ID,
-                            Amount = slot.Amount
+                            Amount = slot.Amount,
+                            IsLocked = slot.IsLocked,
+                            SlotIndex = slotIndex
                         });
                     }
+                    slotIndex++;
                 }
             }
 
@@ -236,98 +378,139 @@ namespace Slax.Inventory
         /// </summary>
         public void LoadSaveData(SerializedInventory serializedInventory, List<ItemSO> allItems)
         {
-            InitializeTabs(); // Ensure we have the correct number of slots
+            InvalidItems.Clear();
+            InitializeTabs(serializedInventory); // Ensure we have the correct number of slots
 
-            int slotIndex = 0;
+            int slotIndex = 0; // Used for non-fixed slots
+
             foreach (var tab in _slotsByTab)
             {
-                for (int i = 0; i < tab.Value.Count; i++)
+                slotIndex = 0;
+                foreach (var slot in serializedInventory.Slots)
                 {
-                    if (slotIndex >= serializedInventory.Slots.Count)
-                        break;
+                    var item = allItems.Find(it => it.ID == slot.ItemID);
 
-                    var serializedSlot = serializedInventory.Slots[slotIndex];
-                    var item = allItems.Find(it => it.ID == serializedSlot.ItemID);
-                    if (item != null)
+                    // If item is not found, skip (purges invalid items)
+                    if (item == null)
                     {
-                        tab.Value[i].AddItem(item, serializedSlot.Amount);
+                        if (!InvalidItems.Contains(slot.ItemID))
+                        {
+                            InvalidItems.Add(slot.ItemID); // This is for debug and displaying warnings to the user
+                        }
+                        continue;
                     }
 
-                    slotIndex++;
+                    // Place in correct tab
+                    foreach (var tabConfig in item.TabConfigs)
+                    {
+                        if (tab.Key == tabConfig)
+                        {
+                            if (_inventoryConfig.UseFixedSlots)
+                            {
+                                if (slot.SlotIndex >= tab.Value.Count) break;
+                                tab.Value[slot.SlotIndex].AddItem(item, slot.Amount);
+                                if (slot.IsLocked) tab.Value[slot.SlotIndex].LockSlot();
+                                else tab.Value[slot.SlotIndex].UnlockSlot();
+
+                            }
+                            else
+                            {
+                                if (slotIndex >= tab.Value.Count) break;
+                                tab.Value[slotIndex].AddItem(item, slot.Amount);
+                                if (slot.IsLocked) tab.Value[slotIndex].LockSlot();
+                                else tab.Value[slotIndex].UnlockSlot();
+                                slotIndex++;
+                            }
+
+                            _currentWeight += item.Weight * slot.Amount;
+                            break;
+                        }
+                    }
                 }
             }
 
             DeserializeUnlockedStates(serializedInventory);
-        }
 
-        /// <summary>
-        /// Allows the user to set a custom save system. 
-        /// Defaults to internal JSON save system.
-        /// </summary>
-        public void SetSaveSystem(IInventorySaveSystem saveSystem)
-        {
-            _saveSystem = saveSystem ?? new DefaultInventorySaveSystem();
-        }
-
-        /// <summary>
-        /// The default save system save method for the InventorySystem.
-        /// </summary>
-        public void SaveInventory()
-        {
-            var serializedInventory = GetSaveData();
-            _saveSystem.SaveInventory(serializedInventory, _inventoryConfig.name);
-        }
-
-        /// <summary>
-        /// The default save system load method for the InventorySystem.
-        /// </summary>
-        public void LoadInventory(List<ItemSO> allItems)
-        {
-            var serializedInventory = _saveSystem.LoadInventory(_inventoryConfig.name);
-            if (serializedInventory != null)
+            if (InvalidItems.Count > 0)
             {
-                LoadSaveData(serializedInventory, allItems);
+                Debug.LogWarning($"The following items were not found in the item database and were not loaded: {string.Join(", ", InvalidItems)}");
             }
         }
 
         private void SerializeUnlockedStates(SerializedInventory serializedInventory)
         {
-            foreach (var tabType in _slotsByTab.Keys)
+            foreach (var tabConfig in _slotsByTab.Keys)
             {
-                var runtimeTabConfig = GetTabConfig(tabType);
+                var runtimeTabConfig = GetTabConfig(tabConfig);
                 if (runtimeTabConfig != null)
                 {
-                    serializedInventory.UnlockedStatesByTab[tabType.Name] = runtimeTabConfig.GetSerializedSlotUnlockStates();
+                    var states = runtimeTabConfig.GetSerializedSlotUnlockStates();
+                    serializedInventory.UnlockedStatesByTab.Add(new SerializedTabUnlockState(tabConfig.Name, states));
                 }
             }
-
-            OnInventoryChanged?.Invoke(this);
         }
 
         private void DeserializeUnlockedStates(SerializedInventory serializedInventory)
         {
-            foreach (var tabType in _slotsByTab.Keys)
+            foreach (var serializedTabState in serializedInventory.UnlockedStatesByTab)
             {
-                if (serializedInventory.UnlockedStatesByTab.TryGetValue(tabType.Name, out var serializedUnlockStates))
+                var tabType = _slotsByTab.Keys.FirstOrDefault(t => t.Name == serializedTabState.TabName);
+                var slots = GetSlotsForTab(tabType);
+                if (tabType != null)
                 {
                     var runtimeTabConfig = GetTabConfig(tabType);
-                    runtimeTabConfig?.InitializeFromSaveData(serializedUnlockStates);
+                    runtimeTabConfig?.InitializeFromSaveData(serializedTabState.UnlockedStates);
+                    if (runtimeTabConfig != null)
+                    {
+                        for (int i = 0; i < slots.Count; i++)
+                        {
+                            if (!runtimeTabConfig.IsInventorySlotUnlocked(i))
+                            {
+                                slots[i].LockSlot();
+                            }
+                        }
+                    }
                 }
             }
-
-            OnInventoryChanged?.Invoke(this);
         }
+        #endregion
 
         #region Helper Methods
         /// <summary>
+        /// Gets the slots for a specific tab type.
+        /// </summary>
+        public List<InventorySlot> GetSlotsForTab(InventoryTabConfigSO tabConfig)
+        {
+            return _slotsByTab.ContainsKey(tabConfig) ? _slotsByTab[tabConfig] : null;
+        }
+
+        /// <summary>
+        /// Finds the first slot containing the specified item in the given tab.
+        /// </summary>
+        public InventorySlot FindSlot(InventoryTabConfigSO tabConfig, ItemSO item)
+        {
+            if (!_slotsByTab.ContainsKey(tabConfig)) return null;
+
+            return _slotsByTab[tabConfig].Find(slot => slot.Item == item);
+        }
+
+        /// <summary>
+        /// Gets the tab configuration for a specific tab type.
+        /// </summary>
+        public RuntimeInventoryTabConfig GetTabConfig(InventoryTabConfigSO tabConfig)
+        {
+            return _tabConfigs.ContainsKey(tabConfig) ? _tabConfigs[tabConfig] : null;
+        }
+
+        /// <summary>
         /// Unlocks a specific slot in a specific tab.
         /// </summary>
-        public void UnlockSlot(ItemTabTypeSO tabType, int slotIndex)
+        public void UnlockSlot(InventoryTabConfigSO tabConfig, int slotIndex)
         {
-            if (!_slotsByTab.ContainsKey(tabType))
+            if (!_slotsByTab.ContainsKey(tabConfig))
                 return;
 
-            var slots = _slotsByTab[tabType];
+            var slots = _slotsByTab[tabConfig];
             if (slotIndex < 0 || slotIndex >= slots.Count)
                 return;
 
@@ -341,12 +524,12 @@ namespace Slax.Inventory
         /// <summary>
         /// Locks a specific slot in a specific tab.
         /// </summary>
-        public void LockSlot(ItemTabTypeSO tabType, int slotIndex)
+        public void LockSlot(InventoryTabConfigSO tabConfig, int slotIndex)
         {
-            if (!_slotsByTab.ContainsKey(tabType))
+            if (!_slotsByTab.ContainsKey(tabConfig))
                 return;
 
-            var slots = _slotsByTab[tabType];
+            var slots = _slotsByTab[tabConfig];
             if (slotIndex < 0 || slotIndex >= slots.Count)
                 return;
 

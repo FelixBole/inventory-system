@@ -11,13 +11,13 @@ namespace Slax.Inventory
     /// </summary>
     public class UIInventoryTabButton : MonoBehaviour
     {
-        [SerializeField] private ItemTabTypeSO _tabType;
+        [SerializeField] private InventoryTabConfigSO _tabConfig;
         [SerializeField] private Button _button;
         [SerializeField] private Image _backgroundImage;
         [SerializeField] private Color _inactiveColor = Color.gray;
         [SerializeField] private Color _activeColor = Color.white;
 
-        public UnityAction<ItemTabTypeSO> OnTabSelected;
+        public UnityAction<InventoryTabConfigSO> OnTabSelected;
 
         private void Start()
         {
@@ -29,7 +29,7 @@ namespace Slax.Inventory
 
         private void OnButtonClicked()
         {
-            OnTabSelected?.Invoke(_tabType);
+            OnTabSelected?.Invoke(_tabConfig);
             SetActive(true);
         }
 

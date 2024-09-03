@@ -12,6 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acaffcde2f3735a4faa88db5b9830dcd, type: 3}
   m_Name: Demo_ResourceTabConfig
   m_EditorClassIdentifier: 
-  _tabType: {fileID: 11400000, guid: 8c14c54bc9329814088bac0e0f0d2868, type: 2}
+  _name: Resources
+  _description: Resources Tab
+  _icon: {fileID: 21300000, guid: 4e3d9e4fe93596347b0d3427ff55d040, type: 3}
+  _iconColor: {r: 0.9528302, g: 0.728702, b: 0.4719206, a: 1}
+  _backgroundColorInactive: {r: 0.4056604, g: 0.4056604, b: 0.4056604, a: 1}
+  _backgroundColorActive: {r: 0.503827, g: 0.9622642, b: 0.64863455, a: 1}
   _slotUnlockStates:
   - {fileID: 11400000, guid: df63d3ee07a758442817f38dd410f625, type: 2}
+  - {fileID: 11400000, guid: 0a3af30d99bce6e4089798e1b29799b4, type: 2}

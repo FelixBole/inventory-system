@@ -15,6 +15,13 @@ namespace Slax.Inventory
         [SerializeField] protected List<InventoryTabConfigSO> _tabConfigs = new List<InventoryTabConfigSO>();
         public List<InventoryTabConfigSO> TabConfigs => _tabConfigs;
 
+        [SerializeField] protected bool _useFixedSlots = false;
+        /// <summary>
+        /// When true, the inventory slots will not be re-arranged when an item is removed
+        /// and the saved slot index will be used to place the item.
+        /// </summary>
+        public bool UseFixedSlots => _useFixedSlots;
+
         #region Extensions: Weight System
         [SerializeField] protected bool _useWeight = false;
         public bool UseWeight => _useWeight;

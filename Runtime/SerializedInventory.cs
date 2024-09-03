@@ -8,7 +8,7 @@ namespace Slax.Inventory
     {
         public string InventoryName;
         public List<SerializedInventorySlot> Slots = new List<SerializedInventorySlot>();
-        public Dictionary<string, List<SerializedSlotUnlockState>> UnlockedStatesByTab = new Dictionary<string, List<SerializedSlotUnlockState>>();
+        public List<SerializedTabUnlockState> UnlockedStatesByTab = new List<SerializedTabUnlockState>();
     }
 
     [Serializable]
@@ -16,5 +16,20 @@ namespace Slax.Inventory
     {
         public string ItemID;
         public int Amount;
+        public bool IsLocked;
+        public int SlotIndex;
+    }
+
+    [Serializable]
+    public class SerializedTabUnlockState
+    {
+        public string TabName;
+        public List<SerializedSlotUnlockState> UnlockedStates;
+
+        public SerializedTabUnlockState(string tabName, List<SerializedSlotUnlockState> unlockedStates)
+        {
+            TabName = tabName;
+            UnlockedStates = unlockedStates;
+        }
     }
 }

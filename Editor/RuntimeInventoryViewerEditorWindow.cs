@@ -10,6 +10,7 @@ namespace Slax.Inventory.Editor
         private RuntimeInventory _runtimeInventory;
         private Vector2 _scrollPosition;
         private Vector2 _sidebarScrollPosition;
+        private Vector2 _invalidItemsScrollPos;
         private string _searchQuery = string.Empty;
 
         private List<string> _eventLogs = new List<string>();
@@ -18,7 +19,7 @@ namespace Slax.Inventory.Editor
         private int _selectedTab = 0;
         private readonly string[] _tabNames = { "Inventory", "Logs" };
 
-        private ItemTabTypeSO _selectedInventoryTab;
+        private InventoryTabConfigSO _selectedInventoryTab;
 
         [MenuItem("Slax/Runtime Inventory Viewer")]
         public static void ShowWindow()
@@ -32,6 +33,11 @@ namespace Slax.Inventory.Editor
             window._selectedInventoryManager = inventoryManager;
             window._runtimeInventory = inventoryManager.RuntimeInventory;
             window.SubscribeToEvents();
+        }
+
+        public static void CloseWindow()
+        {
+            GetWindow<RuntimeInventoryViewerEditorWindow>().Close();
         }
 
         private void OnEnable()
@@ -135,6 +141,8 @@ namespace Slax.Inventory.Editor
                 return;
             }
 
+            DrawInvalidItemsWarning();
+
             _selectedTab = GUILayout.Toolbar(_selectedTab, _tabNames);
 
             switch (_selectedTab)
@@ -178,6 +186,20 @@ namespace Slax.Inventory.Editor
                     _selectedInventoryTab = tab;
                 }
             }
+
+            GUILayout.Space(10);
+
+            if (_runtimeInventory.InvalidItems.Count > 0)
+            {
+                GUI.backgroundColor = Color.yellow;
+            }
+
+            if (GUILayout.Button("Save Inventory"))
+            {
+                _runtimeInventory.SaveInventory();
+            }
+
+            GUI.backgroundColor = Color.white;
         }
 
         private void DrawLogsTab()
@@ -204,7 +226,13 @@ namespace Slax.Inventory.Editor
 
             GUILayout.Space(10);
             GUILayout.Label($"Inventory Name: {_runtimeInventory.InventoryConfig.Name}", EditorStyles.largeLabel);
-            GUILayout.Label($"Current Weight: {_runtimeInventory.CurrentWeight} / {_runtimeInventory.InventoryConfig.MaxWeight}", EditorStyles.label);
+
+            if (_runtimeInventory.InventoryConfig.UseWeight)
+            {
+                GUILayout.Space(5);
+                GUILayout.Label("Weight System", EditorStyles.boldLabel);
+                GUILayout.Label($"Current Weight: {_runtimeInventory.CurrentWeight} / {_runtimeInventory.InventoryConfig.MaxWeight}", EditorStyles.label);
+            }
 
             if (_selectedInventoryTab != null)
             {
@@ -235,21 +263,22 @@ namespace Slax.Inventory.Editor
                     {
                         if (GUILayout.Button("Unlock", GUILayout.Width(70)))
                         {
-                            slot.UnlockSlot();
+                            _runtimeInventory.UnlockSlot(_selectedInventoryTab, i);
                         }
                     }
                     else
                     {
                         if (GUILayout.Button("Lock", GUILayout.Width(70)))
                         {
-                            slot.LockSlot();
+                            _runtimeInventory.LockSlot(_selectedInventoryTab, i);
                         }
 
                         if (!slot.IsEmpty)
                         {
                             if (GUILayout.Button("Remove", GUILayout.Width(70)))
                             {
-                                slot.ClearSlot();
+                                // Simulate clearing the slot
+                                _runtimeInventory.RemoveItemFromSlot(_selectedInventoryTab, i, slot.Amount);
                             }
                         }
                     }
@@ -257,21 +286,23 @@ namespace Slax.Inventory.Editor
                     EditorGUILayout.EndHorizontal();
 
                     EditorGUILayout.BeginHorizontal();
+
                     ItemSO item = (ItemSO)EditorGUILayout.ObjectField("Item", slot.Item, typeof(ItemSO), false);
                     if (item != null && item != slot.Item)
                     {
-                        slot.AddItem(item, 1);
+                        _runtimeInventory.AddItemToSlot(_selectedInventoryTab, i, item, 1);
                     }
 
                     if (GUILayout.Button("+"))
                     {
-                        slot.AddItem(slot.Item, 1);
+                        _runtimeInventory.AddItemToSlot(_selectedInventoryTab, i, item, 1);
                     }
 
                     if (GUILayout.Button("-"))
                     {
-                        slot.RemoveItem(1);
+                        _runtimeInventory.RemoveItemFromSlot(_selectedInventoryTab, i, 1);
                     }
+
                     EditorGUILayout.EndHorizontal();
 
                     EditorGUILayout.EndVertical();
@@ -310,6 +341,23 @@ namespace Slax.Inventory.Editor
         private void OnInspectorUpdate()
         {
             Repaint();
+        }
+
+        private void DrawInvalidItemsWarning()
+        {
+            if (_runtimeInventory.InvalidItems.Count <= 0) return;
+
+            EditorGUILayout.HelpBox("The inventory loaded from data that contains unknown items (Probably not present in the used ItemDatabase). If this is normal, you can ignore this, otherwise, avoid saving as it will purge the invalid items from your save file. Below are the item IDs that are not recognized.", MessageType.Warning);
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            _invalidItemsScrollPos = EditorGUILayout.BeginScrollView(_invalidItemsScrollPos, GUILayout.Height(50));
+
+            string invalidItems = _runtimeInventory.InvalidItems.Count > 0 ? string.Join(", ", _runtimeInventory.InvalidItems) : "None";
+
+            GUILayout.Label(invalidItems, EditorStyles.label);
+
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
         }
     }
 }

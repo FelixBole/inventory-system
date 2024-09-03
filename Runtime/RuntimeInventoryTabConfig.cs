@@ -4,19 +4,20 @@ using System.Linq;
 namespace Slax.Inventory
 {
     /// <summary>
-    /// 
+    /// Represents the runtime configuration of an inventory tab.
+    /// This includes the tab type and the unlock states of the slots.
     /// </summary>
     [System.Serializable]
     public class RuntimeInventoryTabConfig
     {
-        public ItemTabTypeSO TabType { get; private set; }
+        public InventoryTabConfigSO TabConfig { get; private set; }
         public Dictionary<SlotUnlockStateSO, bool> UnlockedStates { get; private set; }
 
         public int MaxSlots => CalculateMaxSlots();
 
         public RuntimeInventoryTabConfig(InventoryTabConfigSO tabConfig, List<SerializedSlotUnlockState> serializedStates = null)
         {
-            TabType = tabConfig.TabType;
+            TabConfig = tabConfig;
             UnlockedStates = new Dictionary<SlotUnlockStateSO, bool>();
 
             // Initialize from tabConfig
@@ -101,17 +102,14 @@ namespace Slax.Inventory
         {
             return !IsInventorySlotUnlocked(slotIndex);
         }
-        
+
 
         public int CalculateMaxSlots()
         {
             int maxSlots = 0;
             foreach (var unlockState in UnlockedStates)
             {
-                if (unlockState.Value) // If the state is unlocked
-                {
-                    maxSlots += unlockState.Key.AdditionalSlots;
-                }
+                maxSlots += unlockState.Key.AdditionalSlots;
             }
             return maxSlots;
         }

@@ -12,14 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 784d4044b3cd29b49951ac90904f558d, type: 3}
   m_Name: Demo_ItemLog
   m_EditorClassIdentifier: 
-  _id: 1
+  _id: demo_item_log
   _name: Log
-  _description: Basic Log
+  _description: A wooden log
   _previewSprite: {fileID: 21300000, guid: 588594924207a4743a796c26d51a3382, type: 3}
-  _actionTypes: 02000000030000000500000007000000
-  _tabTypes: 03000000
+  _actionTypes: []
+  _tabConfigs:
+  - {fileID: 11400000, guid: 521dec21c11e38a49ac5258af6f05ea5, type: 2}
   _prefab: {fileID: 0}
-  _price: 100
   _minDrops: 1
   _maxDrops: 10
+  _weight: 10
   _guid: 2d6d552edd400e24d81ffe3c1d5ccd42

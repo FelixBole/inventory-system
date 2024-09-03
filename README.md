@@ -15,6 +15,7 @@ A modular and flexible Unity Inventory System that supports dynamic item managem
 To create new items for the inventory system:
 
 1. **Create an Item ScriptableObject**:
+
    - Right-click in your Project window.
    - Select `Create > Slax > Inventory > Item`.
    - This will create a new `ItemSO` ScriptableObject.
@@ -25,7 +26,7 @@ To create new items for the inventory system:
    - **Description**: Optionally add a description for the item.
    - **Preview Sprite**: Assign a sprite to visually represent the item in the UI.
    - **Action Types**: Assign one or more `ItemActionTypeSO` objects to define what actions can be performed with the item (e.g., "Equip", "Consume").
-   - **Tab Types**: Assign one or more `ItemTabTypeSO` objects to categorize the item within the inventory (e.g., "Consumables", "Equipment").
+   - **Tab Types**: Assign one or more `InventoryTabConfigSO` objects to categorize the item within the inventory (e.g., "Consumables", "Equipment").
    - **Prefab**: Optionally link a prefab that can be instantiated in the game world.
    - **Loot Settings**: Configure the minimum and maximum drops for this item when looted.
 
@@ -36,15 +37,18 @@ The inventory system uses a slot-based approach where each slot can hold a certa
 1. **RuntimeInventory**:
    - Manages slots and items during gameplay.
    - Initialized using an `InventorySO` configuration.
-   
 2. **Adding Items to a Slot**:
+
    - Use the `AddItemToSlot` method in `RuntimeInventory` to add an item to a specific slot:
+
    ```csharp
    runtimeInventory.AddItemToSlot(tabType, slotIndex, itemSO, amount);
    ```
 
 3. **Removing Items from a Slot**:
+
    - Use the `RemoveItemFromSlot` method in `RuntimeInventory` to remove a certain amount of an item from a specific slot:
+
    ```csharp
    runtimeInventory.RemoveItemFromSlot(tabType, slotIndex, amount);
    ```
@@ -60,6 +64,7 @@ The inventory system uses a slot-based approach where each slot can hold a certa
 To interact with an inventory via script, use the `InventoryManager` component. Here’s a basic guide:
 
 1. **Reference the Inventory**:
+
    ```csharp
    public class MyInventoryHandler : MonoBehaviour
    {
@@ -74,7 +79,9 @@ To interact with an inventory via script, use the `InventoryManager` component. 
    ```
 
 2. **Listening to Inventory Events**:
+
    - The `InventoryManager` class fires events when items are added, removed, bought, or sold:
+
    ```csharp
    inventoryManager.OnAdd += HandleItemAdded;
    inventoryManager.OnRemove += HandleItemRemoved;
@@ -92,11 +99,16 @@ To interact with an inventory via script, use the `InventoryManager` component. 
 
 ## Saving and Loading
 
-The inventory system supports saving and loading inventory data. You can use the built-in JSON save system or implement a custom one.
+The inventory system supports saving and loading inventory data. You can use the default JSON save system or implement a custom one.
 
-### Using the Internal Save System
+### Using the Default Save System
+
+To use the default save system, either import the samples, and one will be created for you or simply create one by going to `Create > Slax > Inventory > Default Inventory Save System` which will generate a ScriptableObject that you will be able to drag and drop into your InventoryManager for it to use it.
+
+> Keep in mind a Save System needs to be set on the InventoryManager for saving and loading to work, there is no default configuration that is set up if you don't put anything. If in doubt, you can import the samples and use the InventoryManager prefab that is setup with the provided Default Save System.
 
 1. **Save Inventory**:
+
    ```csharp
    inventoryManager.SaveInventory(); // Saves to JSON in the Application's persistent data path
    ```
@@ -108,40 +120,37 @@ The inventory system supports saving and loading inventory data. You can use the
 
 ### Implementing a Custom Save System
 
-To integrate a custom save system, implement the `IInventorySaveSystem` interface:
+To integrate a custom save system, create a class that inherits fromt the InventorySaveSystemSO abstract class and add the [CreateAssetMenu] attribute so you can create your save system.
 
 1. **Create a Custom Save System**:
-   ```csharp
-   public class CustomSaveSystem : IInventorySaveSystem
-   {
-       public void SaveInventory(SerializedInventory inventoryData, string inventoryName)
-       {
-           // Custom save logic
-       }
 
-       public SerializedInventory LoadInventory(string inventoryName)
-       {
-           // Custom load logic
-           return new SerializedInventory();
-       }
-   }
+   ```csharp
+    [CreateAssetMenu(menuName = "CustomSaveSystem")]
+    public class CustomInventorySaveSystem : InventorySaveSystemSO
+    {
+        public override void SaveInventory(SerializedInventory inventoryData, string inventoryName)
+        {
+            Debug.Log("Saving inventory with custom inventory save system: " + inventoryName);
+        }
+
+        public override SerializedInventory LoadInventory(string inventoryName)
+        {
+            Debug.Log("Loading inventory with custom inventory save system: " + inventoryName);
+            return null;
+        }
+    }
    ```
 
-2. **Use the Custom Save System**:
-   ```csharp
-   void Start()
-   {
-       var customSaveSystem = new CustomSaveSystem();
-       inventoryManager.RuntimeInventory.SetSaveSystem(customSaveSystem);
-       inventoryManager.SaveInventory(); // Save using the custom system
-   }
-   ```
+2. **Use the Custom Save System**: Create the asset from the script you've just created and drag it into the inventory manager that should use it.
 
 ### Managing Multiple Inventories
 
 `MultiInventoryManager` allows you to manage multiple `RuntimeInventory` instances (e.g., for different characters or merchants):
 
+> I would personally recommend using multiple individual InventoryManager classes but the choice is yours, you can extend them anyways.
+
 1. **Save All Inventories**:
+
    ```csharp
    multiInventoryManager.SaveAllInventories();
    ```
@@ -152,7 +161,9 @@ To integrate a custom save system, implement the `IInventorySaveSystem` interfac
    ```
 
 ## Some diagrams for visual representation
+
 ### How To Save and Load
+
 ```mermaid
 graph LR
     A[Start] --> B[Initialize InventoryManager or MultiInventoryManager]
@@ -169,6 +180,7 @@ graph LR
 ```
 
 ### Creating a new config if none exists
+
 ```mermaid
 graph LR
     A[Start] --> B[Check for Existing InventorySO Config]
@@ -181,6 +193,7 @@ graph LR
 ```
 
 ### Reacting to events
+
 ```mermaid
 graph TD
     A[Start] --> B[Attach Event Listeners to InventoryManager]
@@ -199,6 +212,7 @@ graph TD
 ```
 
 ### Inventory System Initialization Flow
+
 ```mermaid
 graph LR
     A[Start] --> B[Create or Load InventorySO]
@@ -216,17 +230,19 @@ Below is a diagram to illustrate how the different classes in the inventory syst
 
 ```mermaid
 classDiagram
-    InventorySO --> InventorySlot : manages
-    InventoryManager --> RuntimeInventory : references
+    InventoryManager --> RuntimeInventory : uses
     InventoryManager --> InventoryUpdate : triggers
-    InventoryManager --|> IInventorySaveSystem : uses
+    InventoryManager --|> InventorySaveSystemSO : uses
+    InventorySO --> InventorySlot: manages
     InventoryUpdateType --> InventoryUpdate : defines type
     ItemSO <-- InventorySlot : contains
     MultiInventoryManager --> RuntimeInventory : manages multiple
     ItemActionTypeSO --> ItemSO : categorizes
-    ItemTabTypeSO --> ItemSO : categorizes
-    DefaultInventorySaveSystem --|> IInventorySaveSystem : implements
+    InventoryTabConfigSO --> ItemSO : categorizes
+    DefaultInventorySaveSystem --|> InventorySaveSystemSO : inherits
     RuntimeInventory <-- InventorySO: provides configuration for
+    RuntimeInventoryTabConfig <-- RuntimeInventory: manages
+    InventoryTabConfigSO --> RuntimeInventoryTabConfig: provides configuration
 
     class InventorySO {
         +List~InventoryTabConfigSO~ TabConfigs
@@ -236,11 +252,11 @@ classDiagram
     }
 
     class RuntimeInventory {
-        +Dictionary~ItemTabTypeSO, List~InventorySlot~~ SlotsByTab
+        +Dictionary~InventoryTabConfigSO, List~InventorySlot~ SlotsByTab
         +float CurrentWeight
         +InventorySO InventoryConfig
-        +void AddItemToSlot(ItemTabTypeSO, int, ItemSO, int)
-        +void RemoveItemFromSlot(ItemTabTypeSO, int, int)
+        +void AddItemToSlot(InventoryTabConfigSO, int, ItemSO, int)
+        +void RemoveItemFromSlot(InventoryTabConfigSO, int, int)
         +void SaveInventory()
         +void LoadInventory(List~ItemSO~)
     }
@@ -258,8 +274,8 @@ classDiagram
         +RuntimeInventory RuntimeInventory
         +UnityAction~InventoryUpdate~ OnAdd
         +UnityAction~InventoryUpdate~ OnRemove
-        +InventoryUpdate AddItemToSlot(ItemTabTypeSO, int, ItemSO, int)
-        +InventoryUpdate RemoveItemFromSlot(ItemTabTypeSO, int, int)
+        +InventoryUpdate AddItemToSlot(InventoryTabConfigSO, int, ItemSO, int)
+        +InventoryUpdate RemoveItemFromSlot(InventoryTabConfigSO, int, int)
     }
 
     class InventoryUpdate {
@@ -285,7 +301,7 @@ classDiagram
         +string Description
         +Sprite PreviewSprite
         +List~ItemActionTypeSO~ ActionTypes
-        +List~ItemTabTypeSO~ TabTypes
+        +List~InventoryTabConfigSO~ TabTypes
         +GameObject Prefab
     }
 
@@ -295,8 +311,8 @@ classDiagram
         +void LoadAllInventories(List~ItemSO~)
     }
 
-    class IInventorySaveSystem {
-        <<interface>>
+    class InventorySaveSystemSO {
+        <<abstract>>
         +void SaveInventory(SerializedInventory, string)
         +SerializedInventory LoadInventory(string)
     }
@@ -318,9 +334,11 @@ The weight system allows you to enforce a weight limit on your inventory. Items 
 **How to Enable:**
 
 1. **Set up item weights:**
+
    - In the `ItemSO` ScriptableObject, assign a weight value to each item. The default weight is `0` if not set.
 
 2. **Enable the weight system in the inventory:**
+
    - In the `InventorySO` ScriptableObject, toggle the `UseWeight` option.
    - Set the `MaxWeight` value to define the maximum allowable weight for the inventory.
 
@@ -328,6 +346,7 @@ The weight system allows you to enforce a weight limit on your inventory. Items 
    - Use the `OnWeightLimitReached` event in `RuntimeInventory` to handle cases where the weight limit is reached.
 
 **Example:**
+
 ```csharp
 void Start()
 {
@@ -352,16 +371,19 @@ The size limit system allows you to enforce a slot limit in your inventory. Slot
 **How to Enable:**
 
 1. **Configure Slot Unlock States:**
+
    - Create `SlotUnlockStateSO` assets to define the initial and additional slots that can be unlocked.
    - The first `SlotUnlockStateSO` in the list determines the initial number of unlocked slots.
 
 2. **Set Up Inventory:**
+
    - Add `SlotUnlockStateSO` assets to the `_slotUnlockStates` list in the `InventoryTabConfigSO`.
 
 3. **Unlocking Slots During Gameplay:**
    - Use the `UnlockSlotsForTab` method in `RuntimeInventory` to unlock additional slots during gameplay.
 
 **Example:**
+
 ```csharp
 void Start()
 {

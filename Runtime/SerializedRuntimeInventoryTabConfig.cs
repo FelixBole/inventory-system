@@ -10,7 +10,7 @@ namespace Slax.Inventory
 
         public SerializedRuntimeInventoryTabConfig(RuntimeInventoryTabConfig runtimeConfig)
         {
-            TabTypeName = runtimeConfig.TabType.Name;
+            TabTypeName = runtimeConfig.TabConfig.Name;
             UnlockedStates = runtimeConfig.GetSerializedSlotUnlockStates();
         }
     }
