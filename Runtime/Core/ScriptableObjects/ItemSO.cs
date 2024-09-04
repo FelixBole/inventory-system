@@ -34,6 +34,9 @@ namespace Slax.Inventory
         [SerializeField, Tooltip("The maximum number of items that can be stacked together for this item. Setting to a value below 0 makes it have no limitations.")] protected int _stackLimit = -1;
         public int StackLimit => _stackLimit;
 
+        [SerializeField, Tooltip("If toggled, it will prevent the item stack to go over 1 and will override the inventory's UseSameItemInMultipleSlots flag and will prevent the item to be added to a new slot.")] protected bool _isUnique = false;
+        public bool IsUnique => _isUnique;
+
         [SerializeField] protected int _minDrops = 1;
         [SerializeField] protected int _maxDrops = 10;
 

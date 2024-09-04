@@ -17,11 +17,19 @@ namespace Slax.Inventory
         bool _lootExtensionFoldout = false;
         bool _currencyExtensionFoldout = false;
 
+        SerializedProperty _isUniqueProperty;
+        SerializedProperty _isStackableProperty;
+        SerializedProperty _stackLimitProperty;
+
         void OnEnable()
         {
             _item = (ItemSO)target;
             _weightExtensionFoldout = _item.Weight != 0;
             _extensionsFoldout = _weightExtensionFoldout || _lootExtensionFoldout || _currencyExtensionFoldout;
+
+            _isUniqueProperty = serializedObject.FindProperty("_isUnique");
+            _isStackableProperty = serializedObject.FindProperty("_isStackable");
+            _stackLimitProperty = serializedObject.FindProperty("_stackLimit");
         }
 
         public override void OnInspectorGUI()
@@ -127,17 +135,27 @@ namespace Slax.Inventory
             }
 
             PropertyFieldFor("_prefab", "Prefab");
-            PropertyFieldFor("_isStackable", "Is Stackable");
+
+            PropertyFieldFor("_isUnique", "Is Unique");
+            if (_item.IsUnique)
+            {
+                _isStackableProperty.boolValue = false;
+                _stackLimitProperty.intValue = 1;
+            }
+            else
+            {
+                PropertyFieldFor("_isStackable", "Is Stackable");
+            }
+
             if (_item.IsStackable)
             {
-                SerializedProperty stackLimit = serializedObject.FindProperty("_stackLimit");
                 EditorGUILayout.LabelField("Stack Limit");
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Set Infinite Stack Limit"))
                 {
-                    stackLimit.intValue = -1;
+                    _stackLimitProperty.intValue = -1;
                 }
-                stackLimit.intValue = EditorGUILayout.IntField("Stack Limit", stackLimit.intValue);
+                _stackLimitProperty.intValue = EditorGUILayout.IntField("Stack Limit", _stackLimitProperty.intValue);
                 EditorGUILayout.EndHorizontal();
             }
 

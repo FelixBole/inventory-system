@@ -195,6 +195,11 @@ namespace Slax.Inventory
             // If the item is not stackable and multiple slots are allowed, try adding to another slot
             if (_inventoryConfig.UseSameItemInMultipleSlots)
             {
+                if (item.IsUnique)
+                {
+                    // If the item is unique, it cannot be added to a new slot
+                    return new InventoryUpdate(this, item, slot, index, true, InventoryUpdateType.StackLimitReached);
+                }
                 return AddItemToFirstAvailableSlot(tab, item, count);
             }
 

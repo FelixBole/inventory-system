@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.0.0] - 2024-09-02
-
+Complete revamp of the Inventory System.
 ### Added
 - **Separation of Configuration and Runtime Data**:
   - Introduced `RuntimeInventory` class, which handles all runtime inventory operations separately from the configuration data (`InventorySO`).
@@ -14,20 +14,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - **Flexible Save/Load System**:
   - Updated the save/load system to work with `RuntimeInventory`, ensuring that only runtime data is serialized and deserialized.
-  - Introduced `IInventorySaveSystem` interface, allowing developers to implement custom save/load mechanisms or use the provided default JSON save system.
+  - Introduced `InventorySaveSystemSO` class, allowing developers to implement custom save/load mechanisms or use the provided default JSON save system.
   - Implemented `DefaultInventorySaveSystem`, which saves runtime inventory data as JSON files in the `Application.persistentDataPath`.
-
-- **Multi-Inventory Management**:
-  - Added `MultiInventoryManager` class for managing multiple `RuntimeInventory` instances, enabling saving and loading of multiple inventory configurations (e.g., for different characters or merchants).
 
 - **Dynamic Slot Management**:
   - Added methods to `RuntimeInventory` for dynamic slot management, allowing slots to be added, removed, or unlocked during gameplay.
 
 - **Item Slot Enhancements**:
-  - Implemented item stacking and splitting within `InventorySlot`, providing flexible item management.
+  - Implemented item stacking within `InventorySlot`, providing flexible item management.
 
 - **Event-Driven Architecture**:
   - Integrated event-driven behaviors into `RuntimeInventory`, triggering custom actions like `Use`, `Equip`, and `Drop` via events in `ItemSO`.
+
+- **Runtime Viewing Tools**:
+  - Added a runtime inventory analyzer window that can be displayed when the game is running with the click of a button on the inspector of the InventoryManager
 
 - **Weight System as an Optional Extension**:
   - Added a `Weight` property to `ItemSO` and a `UseWeight` toggle to `InventorySO` to manage inventory weight limits.
@@ -37,13 +37,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Introduced a slot limit system using `SlotUnlockStateSO` to progressively unlock slots during gameplay.
   - The first `SlotUnlockStateSO` defines the initial number of unlocked slots, replacing the previous `_baseSlots` approach.
 
+- **Use Same Items in Multiple Slots Optional Extension**:
+  - If toggled, this system will allow the same item to live in multiple slots, making it possible to have multiple stacks of the same item if it reaches its max stack size.
+
 ### Changed
 - **Refactored Inventory Management**:
   - Updated `InventoryManager` to manage `RuntimeInventory` instead of directly interacting with `InventorySO`, improving clarity and extending functionality.
   - `UIInventoryTab` and related UI classes now interact with `RuntimeInventory` to dynamically update UI based on runtime data.
 
 - **Enhanced Item and Tab Customization**:
-  - Replaced `ItemActionType` and `ItemTabType` enums with `ItemActionTypeSO` and `ItemTabTypeSO` ScriptableObjects, providing greater flexibility and extensibility for item actions and inventory tabs.
+  - Replaced `ItemActionType` and `ItemTabType` enums with `ItemActionTypeSO` and `InventoryTabConfig` ScriptableObjects, providing greater flexibility and extensibility for item actions and inventory tabs.
   
 - **Refactored Access Modifiers**:
   - Updated private properties across the package to be protected, facilitating easier extensions and modifications by developers.

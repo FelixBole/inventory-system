@@ -10,6 +10,8 @@ A modular and flexible Unity Inventory System that supports dynamic item managem
 4. Enter the Git URL: `https://github.com/FelixBole/inventory-system.git`.
 5. Click `Add` to install the package into your project.
 
+> Beware: the system is moving quickly, much faster than the documentation is, it is possible that some elements of the documentation are outdated.
+
 ## Creating New Items
 
 To create new items for the inventory system:

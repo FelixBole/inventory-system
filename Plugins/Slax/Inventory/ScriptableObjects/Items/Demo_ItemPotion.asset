@@ -20,6 +20,8 @@ MonoBehaviour:
   _tabConfigs:
   - {fileID: 11400000, guid: 521dec21c11e38a49ac5258af6f05ea5, type: 2}
   _prefab: {fileID: 0}
+  _isStackable: 1
+  _stackLimit: -1
   _minDrops: 1
   _maxDrops: 10
   _weight: 5
