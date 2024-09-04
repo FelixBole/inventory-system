@@ -12,6 +12,13 @@ A modular and flexible Unity Inventory System that supports dynamic item managem
 
 > Beware: the system is moving quickly, much faster than the documentation is, it is possible that some elements of the documentation are outdated.
 
+## Roadmap
+
+- **Editor Tools Hub**: Centralized hub to managee inventories, tabs and items with an easy to use, visual tool.
+- **Item Splitting Feature**: Item stack splitting and assignation to a new slot.
+- **Optional Currency Extension**: New extension to manage currency elements while not overriding a currency system a developer would want to use.
+- **Optional Crafting Extension**: New extension to provide APIs to handle recipe based crafting tools.
+
 ## Creating New Items
 
 To create new items for the inventory system:
