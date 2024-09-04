@@ -17,5 +17,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 521dec21c11e38a49ac5258af6f05ea5, type: 2}
   - {fileID: 11400000, guid: 0216932afb39dfa46a9339df6bd3653b, type: 2}
   _useFixedSlots: 0
+  _useSameItemInMultipleSlots: 0
   _useWeight: 0
-  _maxWeight: 100
+  _maxWeight: 1000

@@ -19,6 +19,7 @@ namespace Slax.Inventory.Editor
         private bool _extensionsFoldout = true;
         private bool _weightFoldout = false;
         private bool _useFixedSlotsFoldout = false;
+        private bool _useSameItemInMultipleSlotsFoldout = false;
 
         private void OnEnable()
         {
@@ -26,6 +27,7 @@ namespace Slax.Inventory.Editor
             _extensionsFoldout = true;
             _weightFoldout = _inventory.UseWeight;
             _useFixedSlotsFoldout = _inventory.UseFixedSlots;
+            _useSameItemInMultipleSlotsFoldout = _inventory.UseSameItemInMultipleSlots;
 
             // Initialize serialized properties
             _nameProperty = serializedObject.FindProperty("Name");
@@ -86,25 +88,6 @@ namespace Slax.Inventory.Editor
             EditorGUILayout.EndVertical();
         }
 
-        private void DrawUseFixedSlots()
-        {
-            _useFixedSlotsFoldout = EditorGUILayout.Foldout(_useFixedSlotsFoldout, "Use Fixed Slots", true);
-            if (!_useFixedSlotsFoldout) return;
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUI.indentLevel++;
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("_useFixedSlots"), new GUIContent("Use Fixed Slots"));
-            if (_inventory.UseFixedSlots)
-            {
-                EditorGUILayout.HelpBox("Use Fixed Slots enabled: The inventory slots will not be re-arranged when an item is removed and the saved slot index will be used to place the item.", MessageType.None);
-            }
-            else
-            {
-                EditorGUILayout.HelpBox("Use Fixed Slots disabled: The inventory slots will be re-arranged when an item is removed.", MessageType.None);
-            }
-            EditorGUI.indentLevel--;
-            EditorGUILayout.EndVertical();
-        }
-
         private void DrawExtensions()
         {
             _extensionsFoldout = EditorGUILayout.Foldout(_extensionsFoldout, "Extensions", true);
@@ -116,6 +99,7 @@ namespace Slax.Inventory.Editor
                 DrawWeightExtension();
 
                 DrawUseFixedSlots();
+                DrawUseSameItemInMultipleSlots();
 
                 EditorGUI.indentLevel--;
             }
@@ -137,6 +121,44 @@ namespace Slax.Inventory.Editor
 
                 EditorGUI.indentLevel--;
             }
+        }
+
+        private void DrawUseFixedSlots()
+        {
+            _useFixedSlotsFoldout = EditorGUILayout.Foldout(_useFixedSlotsFoldout, "Use Fixed Slots", true);
+            if (!_useFixedSlotsFoldout) return;
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("_useFixedSlots"), new GUIContent("Use Fixed Slots"));
+            if (_inventory.UseFixedSlots)
+            {
+                EditorGUILayout.HelpBox("Use Fixed Slots enabled: The inventory slots will not be re-arranged when an item is removed and the saved slot index will be used to place the item.", MessageType.None);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Use Fixed Slots disabled: The inventory slots will be re-arranged when an item is removed.", MessageType.None);
+            }
+            EditorGUI.indentLevel--;
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawUseSameItemInMultipleSlots()
+        {
+            _useSameItemInMultipleSlotsFoldout = EditorGUILayout.Foldout(_useSameItemInMultipleSlotsFoldout, "Use Same Item In Multiple Slots", true);
+            if (!_useSameItemInMultipleSlotsFoldout) return;
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("_useSameItemInMultipleSlots"), new GUIContent("Use Same Item In Multiple Slots"));
+            if (_inventory.UseSameItemInMultipleSlots)
+            {
+                EditorGUILayout.HelpBox("Use Same Item In Multiple Slots enabled: When an item in a slot reaches its stack limit, it will place the item in the next available slot if there is one.", MessageType.None);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Use Same Item In Multiple Slots disabled: When an item in a slot reaches its stack limit it will ignore adding to the inventory.", MessageType.None);
+            }
+            EditorGUI.indentLevel--;
+            EditorGUILayout.EndVertical();
         }
     }
 }

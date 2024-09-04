@@ -34,6 +34,7 @@ namespace Slax.Inventory
 
         public void Select()
         {
+            if (_slot.IsLocked) return;
             OnSelected?.Invoke(_slot);
         }
     }

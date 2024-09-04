@@ -22,10 +22,13 @@ namespace Slax.Inventory
         /// </summary>
         public bool UseFixedSlots => _useFixedSlots;
 
+        [SerializeField, Tooltip("When set to true, makes it so that when an item in a slot reaches its stack limit, it will place the item in the next available slot.")] protected bool _useSameItemInMultipleSlots = false;
+        public bool UseSameItemInMultipleSlots => _useSameItemInMultipleSlots;
+
         #region Extensions: Weight System
         [SerializeField] protected bool _useWeight = false;
         public bool UseWeight => _useWeight;
-        [SerializeField] protected float _maxWeight = 100f;
+        [SerializeField, Tooltip("Absolute max weight for the inventory, so that the save data cannot be manipulated to go over this value.")] protected float _maxWeight = 100f;
         public float MaxWeight => _maxWeight;
         #endregion
     }

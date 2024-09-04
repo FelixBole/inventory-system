@@ -13,7 +13,7 @@ namespace Slax.Inventory
         [SerializeField] protected string _name;
         public string Name => _name;
 
-        [SerializeField] protected string _description;
+        [SerializeField, TextArea] protected string _description;
         public string Description => _description;
 
         [SerializeField] protected Sprite _previewSprite;
@@ -28,11 +28,15 @@ namespace Slax.Inventory
         [SerializeField] protected GameObject _prefab;
         public GameObject Prefab => _prefab;
 
-        [Header("Loot settings")]
+        [SerializeField, Tooltip("If set to true, allows items of this kind to be stacked on top of each other in a single slot.")] protected bool _isStackable = true;
+        public bool IsStackable => _isStackable;
+
+        [SerializeField, Tooltip("The maximum number of items that can be stacked together for this item. Setting to a value below 0 makes it have no limitations.")] protected int _stackLimit = -1;
+        public int StackLimit => _stackLimit;
+
         [SerializeField] protected int _minDrops = 1;
         [SerializeField] protected int _maxDrops = 10;
 
-        [Header("Extensions")]
         [SerializeField] protected float _weight = 0f;
         public float Weight => _weight;
 

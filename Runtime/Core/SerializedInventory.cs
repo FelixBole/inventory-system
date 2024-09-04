@@ -9,6 +9,7 @@ namespace Slax.Inventory
         public string InventoryName;
         public List<SerializedInventorySlot> Slots = new List<SerializedInventorySlot>();
         public List<SerializedTabUnlockState> UnlockedStatesByTab = new List<SerializedTabUnlockState>();
+        public float CurrentWeightLimit = 100f;
     }
 
     [Serializable]

@@ -278,7 +278,7 @@ namespace Slax.Inventory.Editor
                             if (GUILayout.Button("Remove", GUILayout.Width(70)))
                             {
                                 // Simulate clearing the slot
-                                _runtimeInventory.RemoveItemFromSlot(_selectedInventoryTab, i, slot.Amount);
+                                _runtimeInventory.RemoveItemFromSlot(slot.Item, slot, slot.Amount);
                             }
                         }
                     }
@@ -290,17 +290,17 @@ namespace Slax.Inventory.Editor
                     ItemSO item = (ItemSO)EditorGUILayout.ObjectField("Item", slot.Item, typeof(ItemSO), false);
                     if (item != null && item != slot.Item)
                     {
-                        _runtimeInventory.AddItemToSlot(_selectedInventoryTab, i, item, 1);
+                        _runtimeInventory.ChangeItemFromSlot(slot, item, slot.Amount);
                     }
 
                     if (GUILayout.Button("+"))
                     {
-                        _runtimeInventory.AddItemToSlot(_selectedInventoryTab, i, item, 1);
+                        _runtimeInventory.AddItemToSlot(item, slot, 1);
                     }
 
                     if (GUILayout.Button("-"))
                     {
-                        _runtimeInventory.RemoveItemFromSlot(_selectedInventoryTab, i, 1);
+                        _runtimeInventory.RemoveItemFromSlot(item, slot, 1);
                     }
 
                     EditorGUILayout.EndHorizontal();

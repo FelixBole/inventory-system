@@ -29,6 +29,16 @@ namespace Slax.Inventory
 
         public bool IsEmpty => _item == null || _amount <= 0;
 
+        public void ChangeItem(ItemSO item, int amount)
+        {
+            if (_isLocked) return;
+
+            _item = item;
+            _amount = amount;
+
+            OnSlotChanged?.Invoke(this);
+        }
+
         public void AddItem(ItemSO item, int amount)
         {
             if (_isLocked) return;

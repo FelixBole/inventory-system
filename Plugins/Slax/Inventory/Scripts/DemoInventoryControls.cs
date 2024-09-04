@@ -56,14 +56,14 @@ namespace Slax.Inventory
         {
             if (_inventory == null) return;
             if (_items[index] == null) return;
-            _inventory.AddItemToSlot(_items[index]);
+            _inventory.AddItem(_items[index]);
         }
 
         void RemoveItem(int index)
         {
             if (_inventory == null) return;
             if (_items[index] == null) return;
-            _inventory.RemoveItemFromSlot(_items[index]);
+            _inventory.RemoveItem(_items[index]);
         }
     }
 }

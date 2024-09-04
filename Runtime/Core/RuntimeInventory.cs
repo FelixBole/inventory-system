@@ -24,8 +24,11 @@ namespace Slax.Inventory
 
         protected float _currentWeight = 0f;
         public float CurrentWeight => _currentWeight;
+        protected float _currentWeightLimit = 0f;
+        /// <summary>The inventory weight limit, which can be manipulated at runtime</summary>
+        public float CurrentWeightLimit => _currentWeightLimit;
 
-        public List<string> InvalidItems { get; private set; } = new List<string>();
+        public List<string> InvalidItems { get; protected set; } = new List<string>();
 
         /// <summary>
         /// Event triggered when an item cannot be added due to weight limit.
@@ -35,7 +38,7 @@ namespace Slax.Inventory
         /// <summary>
         /// Event triggered when an item cannot be added due to size limit.
         /// </summary>
-        public UnityAction<ItemSO, int> OnSizeLimitReached;
+        public UnityAction<ItemSO, float> OnSizeLimitReached;
 
         public UnityAction<RuntimeInventory> OnInventoryChanged = delegate { };
 
@@ -49,6 +52,7 @@ namespace Slax.Inventory
             InitializeTabs();
         }
 
+        #region Setup and Cleanup
         /// <summary>
         /// Cleans up the inventory by removing event listeners.
         /// Should be called by the inventory manager onDisable.
@@ -100,65 +104,123 @@ namespace Slax.Inventory
 
             OnInventoryChanged?.Invoke(this);
         }
+        #endregion
+
+        #region Item Management
+        /// <summary>
+        /// Adds an item to the appropriate slot in the inventory.
+        /// If the item already exists in the appropriate tab, it will be added to the existing slot or a new slot if conditions are met.
+        /// If no tab or slot is specified, it finds the first available slot in the first available tab.
+        /// </summary>
+        public InventoryUpdate AddItem(ItemSO item, int count = 1)
+        {
+            // Find the first tab that can contain this item
+            var itemTab = item.TabConfigs.FirstOrDefault(t => _slotsByTab.ContainsKey(t));
+            if (itemTab == null)
+                return new InventoryUpdate(this, item, null, -1, false, InventoryUpdateType.Added);
+
+            // Try to find an existing slot for this item in the identified tab
+            var existingSlot = FindSlotWithItem(itemTab, item);
+
+            // Handle adding the item to an appropriate slot if it doesn't already exist
+            if (existingSlot == null)
+            {
+                return AddItemToFirstAvailableSlot(itemTab, item, count);
+            }
+
+            int existingSlotIndex = _slotsByTab[itemTab].IndexOf(existingSlot);
+
+            return RunChecksAndAddItemToSlot(itemTab, existingSlot, item, existingSlotIndex, count);
+        }
 
         /// <summary>
-        /// Adds an item to the first available slot in the first available tab.
-        /// Easy to use, but less efficient than the other overload add methods.
+        /// Adds an item to a specific slot in the inventory.
+        /// Used when the item is already known to exist in the inventory.
         /// </summary>
-        public void AddItemToSlot(ItemSO item, int count = 1)
+        public InventoryUpdate AddItemToSlot(ItemSO item, InventorySlot slot, int count = 1)
         {
             var itemTab = item.TabConfigs.FirstOrDefault(t => _slotsByTab.ContainsKey(t));
-            if (itemTab != null)
+            if (itemTab == null)
+                return new InventoryUpdate(this, item, null, -1, false, InventoryUpdateType.Added);
+
+            int index = _slotsByTab[itemTab].IndexOf(slot);
+            if (index < 0)
             {
-                AddItemToSlot(itemTab, item, count);
+                return new InventoryUpdate(this, item, null, -1, false, InventoryUpdateType.SlotNotFound);
+            }
+
+            return RunChecksAndAddItemToSlot(itemTab, slot, item, index, count);
+        }
+
+        /// <summary>
+        /// Adds an item to the first available slot in the inventory.
+        /// </summary>
+        protected InventoryUpdate AddItemToFirstAvailableSlot(InventoryTabConfigSO tabConfig, ItemSO item, int count)
+        {
+            var firstAvailableSlot = FindFirstAvailableSlotForItem(tabConfig, item);
+            if (firstAvailableSlot != null)
+            {
+                return AddItemToSpecificSlot(tabConfig, _slotsByTab[tabConfig].IndexOf(firstAvailableSlot), item, count);
+            }
+            else
+            {
+                OnSizeLimitReached?.Invoke(item, _currentWeight + item.Weight * count);
+                return new InventoryUpdate(this, item, firstAvailableSlot, -1, true, InventoryUpdateType.SizeLimitReached);
             }
         }
 
         /// <summary>
-        /// Adds an item to the first available slot in a specific tab.
+        /// Runs checks and adds an item to a specific slot in a specific tab.
         /// </summary>
-        public void AddItemToSlot(InventoryTabConfigSO tabConfig, ItemSO item, int count = 1)
+        protected InventoryUpdate RunChecksAndAddItemToSlot(InventoryTabConfigSO tab, InventorySlot slot, ItemSO item, int index, int count)
         {
-            if (!_slotsByTab.ContainsKey(tabConfig))
-                return;
+            // If the item is stackable and the stack limit allows, or if no stack limit is imposed, add to the existing slot
+            if (item.IsStackable)
+            {
+                if (item.StackLimit < 0 || slot.Amount + count <= item.StackLimit)
+                {
+                    return AddItemToSpecificSlot(tab, index, item, count);
+                }
 
-            var existingSlot = FindSlot(tabConfig, item);
-            if (existingSlot != null)
-            {
-                int existingSlotIndex = _slotsByTab[tabConfig].IndexOf(existingSlot);
-                AddItemToSlot(tabConfig, existingSlotIndex, item, count);
-            }
-            else
-            {
-                int firstAvailableSlot = _slotsByTab[tabConfig].FindIndex(slot => slot.IsEmpty && !slot.IsLocked);
-                if (firstAvailableSlot >= 0)
+                // If the stack limit is reached and multiple slots are allowed, try adding to another slot
+                if (_inventoryConfig.UseSameItemInMultipleSlots)
                 {
-                    AddItemToSlot(tabConfig, firstAvailableSlot, item, count);
+                    return AddItemToFirstAvailableSlot(tab, item, count);
                 }
-                else
-                {
-                    OnSizeLimitReached?.Invoke(item, -1);
-                }
+
+                // Stack limit reached, cannot add more to this slot
+                return new InventoryUpdate(this, item, slot, index, true, InventoryUpdateType.StackLimitReached);
             }
+
+            // If the item is not stackable and multiple slots are allowed, try adding to another slot
+            if (_inventoryConfig.UseSameItemInMultipleSlots)
+            {
+                return AddItemToFirstAvailableSlot(tab, item, count);
+            }
+
+            if (!item.IsStackable)
+            {
+                // TODO verify this, it might not be enough to handle all edge-cases, especially regarding fixed slots extension
+                return new InventoryUpdate(this, item, slot, index, true, InventoryUpdateType.StackLimitReached);
+            }
+
+            // Add to the existing slot (for non-stackable items with single slot allowed)
+            return AddItemToSpecificSlot(tab, index, item, count);
         }
 
         /// <summary>
         /// Adds an item to a specific slot in a specific tab.
         /// </summary>
-        public void AddItemToSlot(InventoryTabConfigSO tabConfig, int slotIndex, ItemSO item, int count = 1)
+        protected InventoryUpdate AddItemToSpecificSlot(InventoryTabConfigSO tabConfig, int slotIndex, ItemSO item, int count)
         {
             if (!_slotsByTab.ContainsKey(tabConfig))
-                return;
+                return new InventoryUpdate(this, item, null, -1, false, InventoryUpdateType.TabNotFound);
 
             RuntimeInventoryTabConfig config = GetTabConfig(tabConfig);
-
-            if (config == null)
-                return;
-
-            if (slotIndex >= config.MaxSlots)
+            if (config == null || slotIndex >= config.MaxSlots)
             {
-                OnSizeLimitReached?.Invoke(item, slotIndex);
-                return;
+                OnSizeLimitReached?.Invoke(item, _currentWeight + item.Weight * count);
+                return new InventoryUpdate(this, item, null, slotIndex, false, InventoryUpdateType.SizeLimitReached);
             }
 
             if (_inventoryConfig.UseWeight)
@@ -167,57 +229,114 @@ namespace Slax.Inventory
                 if (_currentWeight + itemWeight > _inventoryConfig.MaxWeight)
                 {
                     OnWeightLimitReached?.Invoke(_currentWeight, _inventoryConfig.MaxWeight);
-                    return;
+                    return new InventoryUpdate(this, item, null, slotIndex, false, InventoryUpdateType.WeightLimitReached);
                 }
                 _currentWeight += itemWeight;
             }
 
             var slots = _slotsByTab[tabConfig];
             if (slotIndex < 0 || slotIndex >= slots.Count)
-                return;
+                return new InventoryUpdate(this, item, null, slotIndex, false, InventoryUpdateType.Added);
 
             slots[slotIndex].AddItem(item, count);
+
+            var updatedSlot = slots[slotIndex];
+            var updateType = InventoryUpdateType.Added;
+            var remaining = !updatedSlot.IsEmpty;
+
+            return new InventoryUpdate(this, item, updatedSlot, slotIndex, remaining, updateType);
         }
 
         /// <summary>
         /// Removes an item from the inventory.
-        /// Easier to use than the other remove methods, but less efficient.
         /// </summary>
-        public void RemoveItemFromSlot(ItemSO item, int count = 1)
+        public InventoryUpdate RemoveItem(ItemSO item, int count = 1)
         {
             var itemTab = item.TabConfigs.FirstOrDefault(t => _slotsByTab.ContainsKey(t));
-            if (itemTab != null)
+            if (itemTab == null)
+                return new InventoryUpdate(this, item, null, -1, false, InventoryUpdateType.Removed);
+
+            var slot = FindSlotForRemoval(itemTab, item);
+            if (slot == null)
+                return new InventoryUpdate(this, item, null, -1, false, InventoryUpdateType.SlotNotFound);
+
+            return RemoveItemFromSpecificSlot(itemTab, _slotsByTab[itemTab].IndexOf(slot), count);
+        }
+
+        /// <summary>
+        /// Removes an item from a specific slot in the inventory.
+        /// Used when the item is already known to exist in the inventory.
+        /// </summary>
+        public InventoryUpdate RemoveItemFromSlot(ItemSO item, InventorySlot slot, int count = 1)
+        {
+            var itemTab = item.TabConfigs.FirstOrDefault(t => _slotsByTab.ContainsKey(t));
+            if (itemTab == null)
+                return new InventoryUpdate(this, item, null, -1, false, InventoryUpdateType.TabNotFound);
+
+            int index = _slotsByTab[itemTab].IndexOf(slot);
+            if (index < 0)
             {
-                var slot = FindSlot(itemTab, item);
-                if (slot != null)
-                {
-                    RemoveItemFromSlot(itemTab, _slotsByTab[itemTab].IndexOf(slot), count);
-                }
+                return new InventoryUpdate(this, item, null, -1, false, InventoryUpdateType.SlotNotFound);
             }
+            return RemoveItemFromSpecificSlot(itemTab, index, count);
         }
 
         /// <summary>
         /// Removes an item from a specific slot in a specific tab.
         /// </summary>
-        public void RemoveItemFromSlot(InventoryTabConfigSO tabType, int slotIndex, int count = 1)
+        protected InventoryUpdate RemoveItemFromSpecificSlot(InventoryTabConfigSO tabConfig, int slotIndex, int count = 1)
         {
-            if (!_slotsByTab.ContainsKey(tabType))
-                return;
+            if (!_slotsByTab.ContainsKey(tabConfig))
+                return new InventoryUpdate(this, null, null, -1, false, InventoryUpdateType.TabNotFound);
 
-            var slots = _slotsByTab[tabType];
+            var slots = _slotsByTab[tabConfig];
             if (slotIndex < 0 || slotIndex >= slots.Count)
-                return;
+                return new InventoryUpdate(this, null, null, slotIndex, false, InventoryUpdateType.SlotNotFound);
 
             var slot = slots[slotIndex];
-            if (slot != null && !slot.IsEmpty)
+            if (slot == null)
+                return new InventoryUpdate(this, null, null, slotIndex, false, InventoryUpdateType.SlotNotFound);
+            else if (slot.IsEmpty)
+                return new InventoryUpdate(this, null, slot, slotIndex, false, InventoryUpdateType.EmptySlotRemoveAttempt);
+
+            if (_inventoryConfig.UseWeight)
             {
-                if (_inventoryConfig.UseWeight)
-                {
-                    float itemWeight = slot.Item.Weight * count;
-                    _currentWeight -= itemWeight;
-                }
-                slot.RemoveItem(count);
+                float itemWeight = slot.Item.Weight * count;
+                _currentWeight -= itemWeight;
             }
+
+            slot.RemoveItem(count);
+
+            var remaining = !slot.IsEmpty;
+            var updateType = InventoryUpdateType.Removed;
+
+            return new InventoryUpdate(this, slot.Item, slot, slotIndex, remaining, updateType);
+        }
+        #endregion
+
+        #region Slot Management
+
+        /// <summary>
+        /// Changes the item in a specific slot in the inventory.
+        /// If newAmount is not specified, the amount will remain the same.
+        /// </summary>
+        public void ChangeItemFromSlot(InventorySlot slot, ItemSO newItem, int newAmount = -1)
+        {
+            if (slot == null || newItem == null)
+                return;
+
+            var itemTab = newItem.TabConfigs.FirstOrDefault(t => _slotsByTab.ContainsKey(t));
+            if (itemTab == null)
+                return;
+
+            int index = _slotsByTab[itemTab].IndexOf(slot);
+            if (index < 0)
+                return;
+
+            if (newAmount < 0)
+                newAmount = slot.Amount;
+
+            slot.ChangeItem(newItem, newAmount);
         }
 
         /// <summary>
@@ -307,6 +426,7 @@ namespace Slax.Inventory
 
             if (invokeInventoryChanged) OnInventoryChanged?.Invoke(this);
         }
+        #endregion
 
         #region Save/Load
         /// <summary>
@@ -369,6 +489,8 @@ namespace Slax.Inventory
                 }
             }
 
+            serializedInventory.CurrentWeightLimit = _currentWeightLimit;
+
             SerializeUnlockedStates(serializedInventory);
             return serializedInventory;
         }
@@ -429,6 +551,9 @@ namespace Slax.Inventory
                 }
             }
 
+            // Weight can be simply ignored if the weight system is not used but it doesn't cost anything to set it
+            _currentWeightLimit = serializedInventory.CurrentWeightLimit > _inventoryConfig.MaxWeight ? _inventoryConfig.MaxWeight : serializedInventory.CurrentWeightLimit;
+
             DeserializeUnlockedStates(serializedInventory);
 
             if (InvalidItems.Count > 0)
@@ -437,7 +562,7 @@ namespace Slax.Inventory
             }
         }
 
-        private void SerializeUnlockedStates(SerializedInventory serializedInventory)
+        protected void SerializeUnlockedStates(SerializedInventory serializedInventory)
         {
             foreach (var tabConfig in _slotsByTab.Keys)
             {
@@ -450,7 +575,7 @@ namespace Slax.Inventory
             }
         }
 
-        private void DeserializeUnlockedStates(SerializedInventory serializedInventory)
+        protected void DeserializeUnlockedStates(SerializedInventory serializedInventory)
         {
             foreach (var serializedTabState in serializedInventory.UnlockedStatesByTab)
             {
@@ -487,11 +612,56 @@ namespace Slax.Inventory
         /// <summary>
         /// Finds the first slot containing the specified item in the given tab.
         /// </summary>
-        public InventorySlot FindSlot(InventoryTabConfigSO tabConfig, ItemSO item)
+        public InventorySlot FindSlotWithItem(InventoryTabConfigSO tabConfig, ItemSO item)
         {
             if (!_slotsByTab.ContainsKey(tabConfig)) return null;
 
+            // If the system uses multiple slots for the same item, return the first slot found where the amount is less than the stack limit
+            if (_inventoryConfig.UseSameItemInMultipleSlots && item.IsStackable && item.StackLimit >= 0)
+            {
+                return _slotsByTab[tabConfig].Find(slot => slot.Item == item && slot.Amount < item.StackLimit);
+            }
+
             return _slotsByTab[tabConfig].Find(slot => slot.Item == item);
+        }
+
+        public InventorySlot FindFirstAvailableSlotForItem(InventoryTabConfigSO tab, ItemSO item)
+        {
+            if (!_slotsByTab.ContainsKey(tab)) return null;
+
+            if (_inventoryConfig.UseSameItemInMultipleSlots && item.IsStackable && item.StackLimit >= 0)
+            {
+                var slot = _slotsByTab[tab].Find(slot => slot.Item == item && slot.Amount < item.StackLimit);
+                if (slot != null) return slot;
+            }
+
+            return FindFirstUnlockedEmptySlot(tab);
+        }
+
+        /// <summary>
+        /// Finds the last slot containing the specified item in the given tab.
+        /// </summary>
+        public InventorySlot FindSlotForRemoval(InventoryTabConfigSO tabConfig, ItemSO item)
+        {
+            if (!_slotsByTab.ContainsKey(tabConfig)) return null;
+
+            if (_inventoryConfig.UseSameItemInMultipleSlots && item.IsStackable && item.StackLimit >= 0)
+            {
+                // Find last slot with the item
+                return _slotsByTab[tabConfig].FindLast(slot => slot.Item == item && slot.Amount > 0);
+            }
+
+            return _slotsByTab[tabConfig].FindLast(slot => slot.Item == item && slot.Amount > 0);
+        }
+
+        /// <summary>
+        /// Finds the first available slot in the given tab.
+        /// </summary>
+        public InventorySlot FindFirstUnlockedEmptySlot(InventoryTabConfigSO tabConfig)
+        {
+            if (!_slotsByTab.ContainsKey(tabConfig)) return null;
+
+            return _slotsByTab[tabConfig].Find(slot => slot.IsEmpty && !slot.IsLocked);
         }
 
         /// <summary>
@@ -540,5 +710,51 @@ namespace Slax.Inventory
             }
         }
         #endregion
+
+        #region Inventory Runtime Update
+        /// <summary>
+        /// Changes the weight limit of the inventory during runtime,
+        /// triggering the inventory changed event. When the inventory
+        /// will be saved, this value will be saved as well.
+        /// </summary>
+        public void ChangeWeightLimit(float newLimit)
+        {
+            _currentWeightLimit = newLimit;
+            OnInventoryChanged?.Invoke(this);
+        }
+        #endregion
+    }
+
+    public struct InventoryUpdate
+    {
+        /// <summary>The item concerned by the update</summary>
+        /// <remarks>Can be null if the update is not related to an item</remarks>
+        public ItemSO Item;
+
+        /// <summary>The slot concerned by the update</summary>
+        public InventorySlot Slot;
+
+        /// <summary>The index of the slot that was updated</summary>
+        public int SlotIndex;
+
+        /// <summary>If the item is remaining in the inventory firing the event</summary>
+        public bool Remaining;
+
+        /// <summary>The current inventory</summary>
+        public RuntimeInventory Inventory;
+
+        /// <summary>The type of update (e.g., Added, Removed, Sold, Bought)</summary>
+        public InventoryUpdateType UpdateType;
+
+        public InventoryUpdate(RuntimeInventory inventory, ItemSO item, InventorySlot slot, int slotIndex, bool remaining, InventoryUpdateType updateType)
+        {
+            Item = item;
+            Slot = slot;
+            SlotIndex = slotIndex;
+            Remaining = remaining;
+            Inventory = inventory;
+            UpdateType = updateType;
+        }
     }
 }
+
