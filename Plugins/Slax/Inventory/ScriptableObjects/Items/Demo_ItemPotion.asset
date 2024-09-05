@@ -18,10 +18,14 @@ MonoBehaviour:
   _previewSprite: {fileID: 21300000, guid: 26dfd4d6afb44a24b81240bc1dbbeeeb, type: 3}
   _actionTypes: []
   _tabConfigs:
-  - {fileID: 11400000, guid: 521dec21c11e38a49ac5258af6f05ea5, type: 2}
+  - {fileID: 11400000, guid: 0216932afb39dfa46a9339df6bd3653b, type: 2}
+  _color: {r: 1, g: 1, b: 1, a: 1}
+  _backgroundColor: {r: 0.85882354, g: 0.52156866, b: 0.64705884, a: 1}
+  _selectedColor: {r: 1, g: 1, b: 1, a: 1}
   _prefab: {fileID: 0}
   _isStackable: 1
   _stackLimit: -1
+  _isUnique: 0
   _minDrops: 1
   _maxDrops: 10
   _weight: 5

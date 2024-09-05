@@ -63,5 +63,25 @@ namespace Slax.Inventory
         {
             EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
         }
+
+        protected Texture2D MakeTex(int width, int height, Color color)
+        {
+            Color[] pix = new Color[width * height];
+            for (int i = 0; i < pix.Length; i++)
+                pix[i] = color;
+            Texture2D result = new Texture2D(width, height);
+            result.SetPixels(pix);
+            result.Apply();
+            return result;
+        }
+
+        protected void DrawTextureInBox(Texture2D background, Texture2D preview, int size, int padding = 4)
+        {
+            GUIStyle backgroundStyle = new GUIStyle(GUI.skin.box);
+            backgroundStyle.normal.background = background;
+            EditorGUILayout.BeginVertical(backgroundStyle, GUILayout.Width(size + padding), GUILayout.Height(size + padding));
+            GUI.DrawTexture(GUILayoutUtility.GetRect(size, size), preview, ScaleMode.ScaleToFit, true, 1);
+            EditorGUILayout.EndVertical();
+        }
     }
 }

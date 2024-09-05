@@ -1,15 +1,19 @@
 using UnityEngine;
 using UnityEditor;
+using System;
 
 namespace Slax.Inventory
 {
     [CustomEditor(typeof(ItemSO))]
     public class ItemSOEditor : EditorWithQuickAccessMethods
     {
+        const int PREVIEW_SIZE = 64;
+
         ItemSO _item;
         Vector2 _scrollPos;
 
         bool _baseInfoFoldout = true;
+        bool _colorFoldout = false;
         bool _helpFoldout = false;
         bool _configurationFoldout = true;
         bool _extensionsFoldout = false;
@@ -21,6 +25,8 @@ namespace Slax.Inventory
         SerializedProperty _isStackableProperty;
         SerializedProperty _stackLimitProperty;
 
+        Texture2D _itemBackground;
+
         void OnEnable()
         {
             _item = (ItemSO)target;
@@ -30,6 +36,10 @@ namespace Slax.Inventory
             _isUniqueProperty = serializedObject.FindProperty("_isUnique");
             _isStackableProperty = serializedObject.FindProperty("_isStackable");
             _stackLimitProperty = serializedObject.FindProperty("_stackLimit");
+
+            _itemBackground = MakeTex(1, 1, _item.BackgroundColor);
+
+            _colorFoldout = _item.Color != Color.white || _item.BackgroundColor != Color.white || _item.SelectedColor != Color.white;
         }
 
         public override void OnInspectorGUI()
@@ -74,17 +84,24 @@ namespace Slax.Inventory
             BH();
             BV();
             EditorGUILayout.LabelField(_item.Name, EditorStyles.boldLabel);
-            string tabs = string.Join(", ", _item.TabConfigs.ConvertAll(x => x.Name).ToArray());
-            if (string.IsNullOrEmpty(tabs))
+
+            string tabs = "None";
+
+            // If any of the item tabConfigs are null, skip
+            if (_item.TabConfigs?.Exists(x => x == null) == true)
             {
-                tabs = "None";
+                EditorGUILayout.HelpBox("There are null tab configurations assigned to this item. Please remove them.", MessageType.Error);
+            }
+            else
+            {
+                tabs = string.Join(", ", _item.TabConfigs?.ConvertAll(x => x.Name).ToArray());
             }
             EditorGUILayout.LabelField($"Tabs: {tabs}");
             EV();
 
             if (_item.PreviewSprite)
             {
-                GUI.DrawTexture(GUILayoutUtility.GetRect(64, 64), _item.PreviewSprite.texture, ScaleMode.ScaleToFit, true, 1);
+                DrawTextureInBox(_itemBackground, _item.PreviewSprite.texture, PREVIEW_SIZE);
             }
             EH();
 
@@ -108,6 +125,28 @@ namespace Slax.Inventory
                 PropertyFieldFor("_previewSprite", "Icon");
 
                 EH();
+
+                EditorGUI.indentLevel++;
+                _colorFoldout = EditorGUILayout.Foldout(_colorFoldout, "Colors", true);
+                if (_colorFoldout)
+                {
+                    BV(true);
+                    EditorGUILayout.HelpBox("These colors are optional and are used to quickly access a color for the item when rendering in any sort of UI.", MessageType.None);
+                    EditorGUI.BeginChangeCheck();
+                    PropertyFieldFor("_color", "Color");
+                    PropertyFieldFor("_backgroundColor", "Background Color");
+                    PropertyFieldFor("_selectedColor", "Selected Color");
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        _itemBackground = MakeTex(1, 1, _item.BackgroundColor);
+                    }
+                    EV();
+
+                    DrawColorCopyPasteButtons();
+
+                }
+                EditorGUI.indentLevel--;
+
                 EV();
             }
         }
@@ -227,6 +266,46 @@ namespace Slax.Inventory
                 EV();
             }
             EditorGUI.indentLevel--;
+        }
+
+        void DrawColorCopyPasteButtons()
+        {
+            if (GUILayout.Button("Copy colors"))
+            {
+                // Store colors in system clipboard, using consistent separator ("--").
+                EditorGUIUtility.systemCopyBuffer = $"{ColorUtility.ToHtmlStringRGBA(_item.Color)}--{ColorUtility.ToHtmlStringRGBA(_item.BackgroundColor)}--{ColorUtility.ToHtmlStringRGBA(_item.SelectedColor)}";
+            }
+
+            if (GUILayout.Button("Paste colors"))
+            {
+                string[] colors = EditorGUIUtility.systemCopyBuffer.Split(new[] { "--" }, StringSplitOptions.None);
+
+                if (colors.Length == 3)
+                {
+                    Color color, backgroundColor, selectedColor;
+
+                    // Attempt to parse the HTML color strings and assign to the properties if successful.
+                    if (ColorUtility.TryParseHtmlString($"#{colors[0]}", out color))
+                    {
+                        SerializedProperty colorProperty = serializedObject.FindProperty("_color");
+                        colorProperty.colorValue = color;
+                    }
+
+                    if (ColorUtility.TryParseHtmlString($"#{colors[1]}", out backgroundColor))
+                    {
+                        SerializedProperty backgroundColorProperty = serializedObject.FindProperty("_backgroundColor");
+                        backgroundColorProperty.colorValue = backgroundColor;
+                    }
+
+                    if (ColorUtility.TryParseHtmlString($"#{colors[2]}", out selectedColor))
+                    {
+                        SerializedProperty selectedColorProperty = serializedObject.FindProperty("_selectedColor");
+                        selectedColorProperty.colorValue = selectedColor;
+                    }
+
+                    serializedObject.ApplyModifiedProperties();
+                }
+            }
         }
     }
 }

@@ -25,7 +25,16 @@ namespace Slax.Inventory
         [SerializeField] protected List<InventoryTabConfigSO> _tabConfigs = new List<InventoryTabConfigSO>();
         public List<InventoryTabConfigSO> TabConfigs => _tabConfigs;
 
-        [SerializeField] protected GameObject _prefab;
+        [SerializeField, Tooltip("[Optional] If set, allows to get quick access to a color for the item when rendering in any sort of UI.")] protected Color _color = Color.white;
+        public Color Color => _color;
+
+        [SerializeField, Tooltip("[Optional] If set, allows you to get quick access to a background color for displaying in the UI.")] protected Color _backgroundColor = Color.white;
+        public Color BackgroundColor => _backgroundColor;
+
+        [SerializeField, Tooltip("[Optional] If set, allows you to get quick access to a color you can use when the item is selected in a UI.")] protected Color _selectedColor = Color.white;
+        public Color SelectedColor => _selectedColor;
+
+        [SerializeField, Tooltip("A Prefab associated with this item to quickly instantiate a GameObject out of it.")] protected GameObject _prefab;
         public GameObject Prefab => _prefab;
 
         [SerializeField, Tooltip("If set to true, allows items of this kind to be stacked on top of each other in a single slot.")] protected bool _isStackable = true;
