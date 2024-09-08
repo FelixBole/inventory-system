@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     /// <summary>
     /// An item action type that can be used to categorize item actions in the inventory.

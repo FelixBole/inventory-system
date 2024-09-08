@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="btn-container-database" class="dashboardDatabase" style="flex-wrap: wrap; border-left-color: rgb(140, 140, 140); border-right-color: rgb(140, 140, 140); border-top-color: rgb(140, 140, 140); border-bottom-color: rgb(140, 140, 140); max-width: 150px; max-height: 60px; height: 60px; width: 150px; min-height: 60px; min-width: 150px; color: rgb(233, 233, 233);">
+        <ui:Label tabindex="-1" text="DB Name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="label-db-name" style="-unity-text-align: middle-left; text-overflow: ellipsis; border-bottom-color: rgba(202, 199, 199, 0.77); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; padding-top: 5px; padding-right: 5px; padding-bottom: 5px; padding-left: 5px; -unity-font-style: bold;" />
+        <ui:Label tabindex="-1" text="95 Items" parse-escape-sequences="true" display-tooltip-when-elided="true" name="label-db-itemcount" style="-unity-text-align: lower-right; padding-top: 5px; padding-right: 5px; padding-bottom: 5px; padding-left: 5px; -unity-font-style: italic; font-size: 11px;" />
+    </ui:Button>
+</ui:UXML>

@@ -1,7 +1,7 @@
 using System.IO;
 using UnityEngine;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     /// <summary>
     /// The default class provided by the Inventory System to save and load the Inventory data.

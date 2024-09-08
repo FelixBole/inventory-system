@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     /// <summary>
     /// Represents the runtime configuration of an inventory tab.

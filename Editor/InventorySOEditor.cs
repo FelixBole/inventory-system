@@ -1,8 +1,9 @@
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Slax.InventorySystem.Runtime.Core;
 
-namespace Slax.Inventory.Editor
+namespace Slax.InventorySystem.Editor
 {
     [CustomEditor(typeof(InventorySO))]
     public class InventorySOEditor : UnityEditor.Editor
@@ -30,7 +31,7 @@ namespace Slax.Inventory.Editor
             _useSameItemInMultipleSlotsFoldout = _inventory.UseSameItemInMultipleSlots;
 
             // Initialize serialized properties
-            _nameProperty = serializedObject.FindProperty("Name");
+            _nameProperty = serializedObject.FindProperty("_name");
             _tabConfigsProperty = serializedObject.FindProperty("_tabConfigs");
 
             // Weight System

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     [System.Serializable]
     public class SerializedRuntimeInventoryTabConfig

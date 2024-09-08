@@ -1,6 +1,7 @@
 using UnityEngine;
+using Slax.InventorySystem.Runtime.Core;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Demo
 {
     [CreateAssetMenu(fileName = "DemoCustomInventorySaveSystem", menuName = "Slax/Inventory/Demo/Custom Inventory Save System")]
     public class DemoCustomInventorySaveSystem : InventorySaveSystemSO

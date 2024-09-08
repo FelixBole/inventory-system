@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using Slax.InventorySystem.Runtime.Core;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.UI
 {
     /// <summary>
     /// This class handles the logic for individual tab buttons. It manages 

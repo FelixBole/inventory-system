@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     [System.Serializable]
     /// <summary>

@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="InventoryListElement" class="container" style="flex-grow: 1; background-color: rgba(46, 46, 46, 0.91); border-bottom-color: rgba(255, 255, 255, 0.76); border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px;">
+        <ui:VisualElement style="flex-grow: 1; flex-direction: row;">
+            <ui:VisualElement style="flex-grow: 1;">
+                <ui:Label tabindex="-1" text="Inventory Name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="InventoryListElement__title" class="label" />
+            </ui:VisualElement>
+            <ui:Label tabindex="-1" text="3 tabs" parse-escape-sequences="true" display-tooltip-when-elided="true" name="InventoryListElement__tabs" style="-unity-text-align: upper-left; -unity-font-style: italic;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="InventoryListElement__cointainer-controls" style="flex-grow: 1; flex-direction: row; padding-top: 10px; padding-right: 3px; padding-bottom: 3px; padding-left: 3px;">
+            <ui:Button text="Edit" parse-escape-sequences="true" display-tooltip-when-elided="true" name="InventoryListElement__controls-edit" />
+            <ui:Button text="Delete" parse-escape-sequences="true" display-tooltip-when-elided="true" name="InventoryListElement__controls-delete" class="danger" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

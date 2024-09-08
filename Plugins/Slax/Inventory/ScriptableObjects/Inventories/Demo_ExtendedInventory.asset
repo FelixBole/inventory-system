@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a082c7eee43d7e242b0d41ab096524ed, type: 3}
   m_Name: Demo_ExtendedInventory
   m_EditorClassIdentifier: 
-  Name: Inventory_AllExtensions
+  _name: Demo_ExtendedInventory
   _tabConfigs:
   - {fileID: 11400000, guid: 0216932afb39dfa46a9339df6bd3653b, type: 2}
   - {fileID: 11400000, guid: 521dec21c11e38a49ac5258af6f05ea5, type: 2}

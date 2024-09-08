@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     [CreateAssetMenu(menuName = "Slax/Inventory/Item")]
     public class ItemSO : ScriptableObject

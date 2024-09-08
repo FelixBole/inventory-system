@@ -1,9 +1,11 @@
 fileFormatVersion: 2
-guid: e1d6d848e26bce943b162f42508f7381
+guid: 10976c11968456343b7db8100338ae17
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - _uxml: {fileID: 9197481963319205126, guid: 316c73859054da1428577c73e57f9605, type: 3}
+  - _pilTabUxml: {fileID: 9197481963319205126, guid: 4b74df04d085bb74f97ab0ed79d5b0af, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

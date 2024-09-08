@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Editor
 {
     public class EditorWithQuickAccessMethods: UnityEditor.Editor
     {

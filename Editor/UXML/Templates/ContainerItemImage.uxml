@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement name="container-item-image" style="flex-grow: 1; background-color: rgba(255, 255, 255, 0.4); width: 64px; height: 100%; max-width: 64px; justify-content: center; border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px;">
+        <ui:VisualElement name="item-sprite" style="flex-grow: 1; height: 100%; align-self: center; width: 100%; align-items: center; -unity-background-scale-mode: scale-to-fit; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-left-color: rgba(0, 0, 0, 0); border-right-color: rgba(0, 0, 0, 0); border-top-color: rgba(0, 0, 0, 0); border-bottom-color: rgba(0, 0, 0, 0);">
+            <ui:Label tabindex="-1" text="x86" parse-escape-sequences="true" display-tooltip-when-elided="true" name="label-item-stacks" binding-path="_stackLimit" style="position: absolute; right: auto; bottom: auto; width: 55px; white-space: nowrap; text-overflow: ellipsis; -unity-font-style: bold; font-size: 12px; color: rgb(0, 0, 0); top: 0; left: 0;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

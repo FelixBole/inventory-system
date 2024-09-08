@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     /// <summary>
     /// An inventory, could be the inventory of the player or a merchant's inventory. 
@@ -11,7 +11,8 @@ namespace Slax.Inventory
     [CreateAssetMenu(menuName = "Slax/Inventory/Inventory")]
     public class InventorySO : ScriptableObject
     {
-        public string Name = "Inventory";
+        [SerializeField] protected string _name = "Inventory";
+        public string Name => _name;
         [SerializeField] protected List<InventoryTabConfigSO> _tabConfigs = new List<InventoryTabConfigSO>();
         public List<InventoryTabConfigSO> TabConfigs => _tabConfigs;
 

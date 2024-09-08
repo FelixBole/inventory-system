@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Events;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     /// <summary>
     /// Manages multiple inventories.

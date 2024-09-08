@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Slax.InventorySystem.Runtime.Core;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.UI
 {
     public class UIInventory : MonoBehaviour
     {
