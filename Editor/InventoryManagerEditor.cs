@@ -1,8 +1,8 @@
-using Slax.Inventory.Editor;
 using UnityEditor;
 using UnityEngine;
+using Slax.InventorySystem.Runtime.Core;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Editor
 {
     [CustomEditor(typeof(InventoryManager))]
     public class InventoryManagerEditor : UnityEditor.Editor

@@ -1,4 +1,4 @@
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     [System.Serializable]
     public class SerializedSlotUnlockState

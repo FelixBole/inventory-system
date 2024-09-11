@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Slax.InventorySystem.Runtime.Core;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.UI
 {
     public class UIInventoryTab : MonoBehaviour
     {

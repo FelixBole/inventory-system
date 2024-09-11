@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine.Events;
 using UnityEngine;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     /// <summary>
     /// A runtime inventory that offers all functionalities for managing

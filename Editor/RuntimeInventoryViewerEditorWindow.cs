@@ -1,8 +1,10 @@
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
+using Slax.InventorySystem.Runtime.Core;
+using System.Linq;
 
-namespace Slax.Inventory.Editor
+namespace Slax.InventorySystem.Editor
 {
     public class RuntimeInventoryViewerEditorWindow : EditorWindow
     {
@@ -20,12 +22,6 @@ namespace Slax.Inventory.Editor
         private readonly string[] _tabNames = { "Inventory", "Logs" };
 
         private InventoryTabConfigSO _selectedInventoryTab;
-
-        [MenuItem("Slax/Runtime Inventory Viewer")]
-        public static void ShowWindow()
-        {
-            GetWindow<RuntimeInventoryViewerEditorWindow>("Runtime Inventory Viewer");
-        }
 
         public static void OpenWindow(InventoryManager inventoryManager)
         {

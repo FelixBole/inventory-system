@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     /// <summary>
     /// A simple loader that loads the inventory on start.

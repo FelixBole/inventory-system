@@ -1,10 +1,15 @@
 {
     "name": "Slax.InventorySystem.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "Slax.InventorySystem.Editor",
     "references": [
-        "GUID:17fa42a0a17438b4687f8e5163b2a270"
+        "GUID:17fa42a0a17438b4687f8e5163b2a270",
+        "GUID:bd22d485099ccdb44b0835933ac423c5",
+        "GUID:2a6cf9f21bc1a0244b872a19d572db85",
+        "GUID:3e989d69ff821514bb9bd37ea5b12197"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

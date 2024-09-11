@@ -1,232 +1,271 @@
 using UnityEngine;
 using UnityEditor;
+using Slax.InventorySystem.Runtime.Core;
+using Slax.Utils.Editor;
+using UnityEngine.UIElements;
+using UnityEditor.UIElements;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Editor
 {
     [CustomEditor(typeof(ItemSO))]
-    public class ItemSOEditor : EditorWithQuickAccessMethods
+    public class ItemSOEditor : UnityEditor.Editor
     {
-        ItemSO _item;
-        Vector2 _scrollPos;
+        [SerializeField] protected VisualTreeAsset _uxml;
+        [SerializeField] protected VisualTreeAsset _pilTabUxml;
 
-        bool _baseInfoFoldout = true;
-        bool _helpFoldout = false;
-        bool _configurationFoldout = true;
-        bool _extensionsFoldout = false;
-        bool _weightExtensionFoldout = false;
-        bool _lootExtensionFoldout = false;
-        bool _currencyExtensionFoldout = false;
+        protected Foldout _foldoutHelp;
 
-        SerializedProperty _isUniqueProperty;
-        SerializedProperty _isStackableProperty;
-        SerializedProperty _stackLimitProperty;
+        protected VisualElement _container;
+        protected VisualElement _containerToolbarResult;
+        protected ToolbarToggle _toolbarToggleMain;
+        protected ToolbarToggle _toolbarToggleUi;
+        protected ToolbarToggle _toolbarToggleConfig;
+        protected ToolbarToggle _toolbarToggleExtensions;
 
-        void OnEnable()
+        protected VisualElement _containerMainInfo;
+        protected VisualElement _containerUI;
+        protected VisualElement _containerConfig;
+        protected VisualElement _containerExtensions;
+
+        protected VisualElement _containerTabs;
+        protected VisualElement _itemSprite;
+        protected Label _labelItemStacks;
+        protected VisualElement _warningNoTabs;
+
+        public override VisualElement CreateInspectorGUI()
         {
-            _item = (ItemSO)target;
-            _weightExtensionFoldout = _item.Weight != 0;
-            _extensionsFoldout = _weightExtensionFoldout || _lootExtensionFoldout || _currencyExtensionFoldout;
+            var root = new VisualElement();
+            _uxml.CloneTree(root);
 
-            _isUniqueProperty = serializedObject.FindProperty("_isUnique");
-            _isStackableProperty = serializedObject.FindProperty("_isStackable");
-            _stackLimitProperty = serializedObject.FindProperty("_stackLimit");
+            // Open Item Editor Button
+            root.Q<Button>("open-editor-button").clicked += () =>
+            {
+                ItemSOEditorWindow.OpenFromInspector(target as ItemSO);
+            };
+
+            // Registering Stuff and setting up the UI
+            RegisterVisualElementVars(root);
+            RegisterToolbarToggleEvents();
+            RegisterConfigCallbacks(root);
+
+            SetupToggles();
+            CustomEditorUtility.ToggleDisplay(_warningNoTabs, false);
+
+            _foldoutHelp.value = false;
+
+            // Track changes in the tab configs
+            var propertyFieldTabConfigs = root.Q<PropertyField>("pf-tab-configs");
+
+            propertyFieldTabConfigs.TrackSerializedObjectValue(serializedObject, (so) =>
+            {
+                RedrawTabs();
+            });
+
+            // Drawing the UI
+
+            DrawRecap(root);
+            // DrawFoldoutDefaultInspector(root);
+
+            return root;
         }
 
-        public override void OnInspectorGUI()
+        void RegisterVisualElementVars(VisualElement root)
         {
-            serializedObject.Update();
+            // Main container
+            _container = root.Q<VisualElement>("window-container");
 
-            DrawHelp();
+            // Help section
+            _foldoutHelp = root.Q<Foldout>("foldout-help");
 
-            BSV(ref _scrollPos);
+            // Toolbar Content
+            _containerToolbarResult = root.Q<VisualElement>("container-toolbar-result");
 
-            DrawQuickView();
+            _toolbarToggleMain = root.Q<ToolbarToggle>("toolbar-toggle-main");
+            _toolbarToggleUi = root.Q<ToolbarToggle>("toolbar-toggle-ui");
+            _toolbarToggleConfig = root.Q<ToolbarToggle>("toolbar-toggle-config");
+            _toolbarToggleExtensions = root.Q<ToolbarToggle>("toolbar-toggle-extensions");
 
-            Space();
+            _containerMainInfo = root.Q<VisualElement>("container-main-info");
+            _containerUI = root.Q<VisualElement>("container-ui");
+            _containerConfig = root.Q<VisualElement>("container-config");
+            _containerExtensions = root.Q<VisualElement>("container-extensions");
 
-            DrawBaseInfo();
-
-            DrawConfiguration();
-
-            DrawExtensions();
-
-            ESV();
-
-            serializedObject.ApplyModifiedProperties();
+            // Recap section elements
+            _containerTabs = root.Q<VisualElement>("container-tabs");
+            _itemSprite = root.Q<VisualElement>("item-sprite");
+            _labelItemStacks = root.Q<Label>("label-item-stacks");
+            _warningNoTabs = root.Q<VisualElement>("warning-no-tabs");
         }
 
-        void DrawHelp()
+        void RegisterConfigCallbacks(VisualElement root)
         {
-            EditorGUI.indentLevel++;
-            _helpFoldout = EditorGUILayout.Foldout(_helpFoldout, "Help", true);
+            var isUniquePF = root.Q<PropertyField>("pf-is-unique");
+            var isStackablePF = root.Q<PropertyField>("pf-is-stackable");
+            var stackLimitPF = root.Q<PropertyField>("pf-stack-limit");
+            var btnSetStackInfinite = root.Q<Button>("btn-set-stack-infinite");
 
-            if (_helpFoldout)
+            isUniquePF.RegisterCallback<ChangeEvent<bool>>((evt) =>
             {
-                EditorGUILayout.HelpBox("This scriptable object represents an item in the inventory system. It contains all the necessary information to create and manage items in the inventory system. It will need at least one Tab Configuration (and generally only one) for the inventory system to know where to place it.", MessageType.None);
-            }
-            EditorGUI.indentLevel--;
-        }
-
-        void DrawQuickView()
-        {
-            BV(true);
-
-            BH();
-            BV();
-            EditorGUILayout.LabelField(_item.Name, EditorStyles.boldLabel);
-            string tabs = string.Join(", ", _item.TabConfigs.ConvertAll(x => x.Name).ToArray());
-            if (string.IsNullOrEmpty(tabs))
-            {
-                tabs = "None";
-            }
-            EditorGUILayout.LabelField($"Tabs: {tabs}");
-            EV();
-
-            if (_item.PreviewSprite)
-            {
-                GUI.DrawTexture(GUILayoutUtility.GetRect(64, 64), _item.PreviewSprite.texture, ScaleMode.ScaleToFit, true, 1);
-            }
-            EH();
-
-            EV();
-        }
-
-        void DrawBaseInfo()
-        {
-            EditorGUI.indentLevel++;
-            _baseInfoFoldout = EditorGUILayout.Foldout(_baseInfoFoldout, "Base Information", true);
-            EditorGUI.indentLevel--;
-
-            if (_baseInfoFoldout)
-            {
-                BV(true);
-                Space();
-                PropertyFieldFor("_id", "ID");
-                PropertyFieldFor("_name", "Name");
-                PropertyFieldFor("_description", "Description");
-                BH();
-                PropertyFieldFor("_previewSprite", "Icon");
-
-                EH();
-                EV();
-            }
-        }
-
-        void DrawConfiguration()
-        {
-            Space();
-            EditorGUI.indentLevel++;
-            _configurationFoldout = EditorGUILayout.Foldout(_configurationFoldout, "Configuration", true);
-
-            if (!_configurationFoldout)
-            {
-                EditorGUI.indentLevel--;
-                return;
-            }
-
-            BV(true);
-
-            PropertyFieldFor("_actionTypes", "Action Types");
-            PropertyFieldFor("_tabConfigs", "Tab Configurations");
-
-            if (_item.TabConfigs.Count == 0)
-            {
-                EditorGUILayout.HelpBox("There are no tab configurations assigned to this item. The inventory will not be able to know what tab to set this item to.", MessageType.Warning);
-            }
-
-            PropertyFieldFor("_prefab", "Prefab");
-
-            PropertyFieldFor("_isUnique", "Is Unique");
-            if (_item.IsUnique)
-            {
-                _isStackableProperty.boolValue = false;
-                _stackLimitProperty.intValue = 1;
-            }
-            else
-            {
-                PropertyFieldFor("_isStackable", "Is Stackable");
-            }
-
-            if (_item.IsStackable)
-            {
-                EditorGUILayout.LabelField("Stack Limit");
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Set Infinite Stack Limit"))
+                if (evt.newValue)
                 {
-                    _stackLimitProperty.intValue = -1;
+                    _labelItemStacks.text = "";
+                    CustomEditorUtility.ToggleDisplay(new VisualElement[] { isStackablePF, stackLimitPF, btnSetStackInfinite }, false);
                 }
-                _stackLimitProperty.intValue = EditorGUILayout.IntField("Stack Limit", _stackLimitProperty.intValue);
-                EditorGUILayout.EndHorizontal();
-            }
+                else
+                {
+                    _labelItemStacks.text = serializedObject.FindProperty("_stackLimit").intValue.ToString();
+                    CustomEditorUtility.ToggleDisplay(new VisualElement[] { isStackablePF, stackLimitPF, btnSetStackInfinite }, true);
+                }
+            });
 
-            EditorGUI.indentLevel--;
+            isStackablePF.RegisterCallback<ChangeEvent<bool>>((evt) =>
+            {
+                if (!evt.newValue)
+                {
+                    _labelItemStacks.text = "";
+                }
+                else
+                {
+                    _labelItemStacks.text = serializedObject.FindProperty("_stackLimit").intValue.ToString();
+                }
+            });
 
-            EV();
+            stackLimitPF.RegisterCallback<ChangeEvent<int>>((evt) =>
+            {
+                bool isStackable = serializedObject.FindProperty("_isStackable").boolValue;
+                bool isUnique = serializedObject.FindProperty("_isUnique").boolValue;
+
+                if (!isUnique)
+                {
+                    int value = evt.newValue;
+                    if (value < 0)
+                    {
+                        _labelItemStacks.text = "∞";
+                        CustomEditorUtility.ToggleDisplay(btnSetStackInfinite, false);
+                    }
+                    else
+                    {
+                        _labelItemStacks.text = value.ToString();
+                        CustomEditorUtility.ToggleDisplay(btnSetStackInfinite, true);
+                    }
+                }
+            });
+
+            btnSetStackInfinite.clicked += () =>
+            {
+                int current = serializedObject.FindProperty("_stackLimit").intValue;
+                serializedObject.FindProperty("_stackLimit").intValue = -1;
+                serializedObject.ApplyModifiedProperties();
+                stackLimitPF.SendEvent(ChangeEvent<int>.GetPooled(current, -1));
+                CustomEditorUtility.ToggleDisplay(btnSetStackInfinite, false);
+            };
         }
 
-        void DrawExtensions()
+        void RedrawTabs()
         {
-            Space();
-            EditorGUI.indentLevel++;
+            _containerTabs.Clear();
+            SerializedProperty tabsProperty = serializedObject.FindProperty("_tabConfigs");
 
-            _extensionsFoldout = EditorGUILayout.Foldout(_extensionsFoldout, "Extensions", true);
+            CustomEditorUtility.ToggleDisplay(_warningNoTabs, tabsProperty.arraySize == 0);
 
-            if (_extensionsFoldout)
+            for (int i = 0; i < tabsProperty.arraySize; i++)
             {
+                SerializedProperty tabProperty = tabsProperty.GetArrayElementAtIndex(i);
+                InventoryTabConfigSO tabConfig = tabProperty.objectReferenceValue as InventoryTabConfigSO;
 
-                GUI.backgroundColor = Color.blue;
-                BV(true);
-                GUI.backgroundColor = Color.white;
-                EditorGUILayout.HelpBox("Extensions are additional data that can be added to the item to provide more functionality. Please ensure that your InventorySO is correctly configured if you decide to use some of these extensions.", MessageType.None);
-                Space();
-                DrawWeightExtension();
-                Space();
-                DrawLootExtension();
-                Space();
-                EV();
+                if (tabConfig == null) continue;
+
+                // Create a new tab
+                VisualElement tab = _pilTabUxml.CloneTree();
+                tab.Q<Label>().text = tabConfig.name;
+                _containerTabs.Add(tab);
             }
-
-            EditorGUI.indentLevel--;
         }
 
-        void DrawWeightExtension()
+        void DrawRecap(VisualElement root)
         {
-            EditorGUI.indentLevel++;
-            _weightExtensionFoldout = EditorGUILayout.Foldout(_weightExtensionFoldout, "Weight Extension", true);
-            if (_weightExtensionFoldout)
+            var previewSpritePropertyField = root.Q<PropertyField>("pf-preview-sprite");
+
+            previewSpritePropertyField.RegisterCallback<ChangeEvent<Object>>((evt) =>
             {
-                BV(true);
-                PropertyFieldFor("_weight", "Weight");
-                EV();
-            }
-            EditorGUI.indentLevel--;
+                Sprite sprite = evt.newValue as Sprite;
+                if (sprite == null) return;
+                _itemSprite.style.backgroundImage = sprite.texture;
+            });
+
+            var colorPF = root.Q<PropertyField>("pf-color");
+            var backgroundColorPF = root.Q<PropertyField>("pf-background-color");
+            var selectedColorPF = root.Q<PropertyField>("pf-selected-color");
+
+            colorPF.RegisterCallback<ChangeEvent<Color>>((evt) =>
+            {
+                _itemSprite.style.unityBackgroundImageTintColor = evt.newValue;
+            });
+
+            backgroundColorPF.RegisterCallback<ChangeEvent<Color>>((evt) =>
+            {
+                _itemSprite.style.backgroundColor = evt.newValue;
+            });
+
+            selectedColorPF.RegisterCallback<ChangeEvent<Color>>((evt) =>
+            {
+                _itemSprite.style.borderBottomColor = evt.newValue;
+            });
+
+            SerializedProperty previewSpriteProperty = serializedObject.FindProperty("_previewSprite");
+
+            Sprite previewSprite = previewSpriteProperty.objectReferenceValue as Sprite;
+            _itemSprite.style.backgroundImage = previewSprite.texture;
+
+            // Commented because was able to set scale to fit on the bg of the VisualElement in UI Builder
+            // var size = new BackgroundSize(BackgroundSizeType.Contain);
+            // var bgSize = new StyleBackgroundSize(size);
+            // spriteContainer.style.backgroundSize = bgSize;
+
+            RedrawTabs();
         }
 
-        void DrawLootExtension()
+        void SetupToggles()
         {
-            EditorGUI.indentLevel++;
-            _lootExtensionFoldout = EditorGUILayout.Foldout(_lootExtensionFoldout, "Loot Extension", true);
-            if (_lootExtensionFoldout)
-            {
-                BV(true);
-                PropertyFieldFor("_minDrops", "Min Drops");
-                PropertyFieldFor("_maxDrops", "Max Drops");
-                EV();
-            }
-            EditorGUI.indentLevel--;
+            _toolbarToggleMain.value = true;
+            _toolbarToggleUi.value = true;
+            _toolbarToggleConfig.value = true;
+            _toolbarToggleExtensions.value = false;
+            CustomEditorUtility.ToggleDisplay(_containerExtensions, false);
+            CustomEditorUtility.ToggleDisplay(new VisualElement[] { _containerMainInfo, _containerUI, _containerConfig }, true);
         }
 
-        void DrawCurrencyExtension()
+        void RegisterToolbarToggleEvents()
         {
-            EditorGUI.indentLevel++;
-            _currencyExtensionFoldout = EditorGUILayout.Foldout(_currencyExtensionFoldout, "Currency Extension", true);
-            if (_currencyExtensionFoldout)
+            _toolbarToggleMain.RegisterValueChangedCallback((evt) =>
             {
-                BV(true);
-                // TODO: Add currency extension fields
-                EV();
-            }
-            EditorGUI.indentLevel--;
+                CustomEditorUtility.ToggleDisplay(_containerMainInfo, evt.newValue);
+            });
+
+            _toolbarToggleUi.RegisterValueChangedCallback((evt) =>
+            {
+                CustomEditorUtility.ToggleDisplay(_containerUI, evt.newValue);
+            });
+
+            _toolbarToggleConfig.RegisterValueChangedCallback((evt) =>
+            {
+                CustomEditorUtility.ToggleDisplay(_containerConfig, evt.newValue);
+            });
+
+            _toolbarToggleExtensions.RegisterValueChangedCallback((evt) =>
+            {
+                CustomEditorUtility.ToggleDisplay(_containerExtensions, evt.newValue);
+            });
+        }
+
+        void DrawFoldoutDefaultInspector(VisualElement root)
+        {
+            var foldout = new Foldout() { viewDataKey = "itemSoFoldout", text = "Full Inspector" };
+            foldout.AddToClassList("fixed-foldout-margin");
+            InspectorElement.FillDefaultInspector(foldout, serializedObject, this);
+
+            // We add to container and not root because container is already in the scroll view
+            _container.Add(foldout);
         }
     }
 }

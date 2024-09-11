@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="ActionTypeListItem" class="container" style="flex-grow: 1; flex-direction: row;">
+        <ui:VisualElement style="flex-grow: 1; justify-content: center;">
+            <ui:Label tabindex="-1" text="Action Type Name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ActionTypeListItem__title" class="label" />
+        </ui:VisualElement>
+        <ui:Button text="x" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ActionTypeListItem__delete" class="danger" />
+    </ui:VisualElement>
+</ui:UXML>

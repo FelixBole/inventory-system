@@ -1,6 +1,6 @@
 {
 	"name": "com.slax.inventorysystem",
-	"version": "0.2.0",
+	"version": "1.1.0",
 	"displayName": "Inventory System",
 	"description": "A simple Inventory System",
 	"unity": "2019.1",
@@ -14,25 +14,10 @@
 		"name": "Felix Bole",
 		"email": "felix.slax@gmail.com"
 	},
-	"files": [
-		"Documentation/**",
-		"Documentation.meta",
-		"Editor/**",
-		"Editor.meta",
-		"Runtime/**",
-		"Runtime.meta",
-		"Samples/**",
-		"Samples.meta",
-		"CHANGELOG.md",
-		"CHANGELOG.md.meta",
-		"LICENSE.md",
-		"LICENSE.md.meta",
-		"README.md",
-		"README.md.meta",
-		"package.json.meta"
-	],
 	"dependencies": {
-		"com.unity.textmeshpro": "^3.0.6"
+		"com.unity.textmeshpro": "^3.0.6",
+		"com.slax.uitoolkit": "git@github.com:FelixBole/slax-ui-toolkit.git",
+		"com.slax.utils": "git@github.com:FelixBole/slax-utility-toolkit.git"
 	},
 	"samples": [
 		{

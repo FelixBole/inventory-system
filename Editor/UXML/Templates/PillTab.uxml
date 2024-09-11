@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:VisualElement name="pill" style="flex-grow: 0; flex-wrap: wrap;">
+        <ui:Label tabindex="-1" text="Inventory Tab" parse-escape-sequences="true" display-tooltip-when-elided="true" enable-rich-text="false" />
+    </ui:VisualElement>
+</ui:UXML>

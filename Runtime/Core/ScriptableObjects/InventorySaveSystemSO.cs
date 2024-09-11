@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     public abstract class InventorySaveSystemSO : ScriptableObject
     {

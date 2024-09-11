@@ -1,6 +1,6 @@
 {
-    "name": "Slax.InventorySystem.Plugins",
-    "rootNamespace": "",
+    "name": "Slax.InventorySystem.Runtime.Demo",
+    "rootNamespace": "Slax.InventorySystem.Runtime.Demo",
     "references": [
         "GUID:17fa42a0a17438b4687f8e5163b2a270"
     ],

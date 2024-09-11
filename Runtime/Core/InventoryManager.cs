@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     public class InventoryManager : MonoBehaviour
     {

@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Editor/USS/InventorySystemStylesheet.uss?fileID=7433441132597879392&amp;guid=43db50cca493058438d2d590d8b4f03d&amp;type=3#InventorySystemStylesheet" />
+    <ui:VisualElement name="container-item-creation" style="flex-grow: 1; display: flex; padding-top: 5px; padding-right: 5px; padding-bottom: 5px; padding-left: 5px; font-size: 16px;">
+        <ui:Label tabindex="-1" text="Item Creation Wizard" parse-escape-sequences="true" display-tooltip-when-elided="true" style="-unity-text-align: upper-left; -unity-font-style: bold;" />
+        <ui:VisualElement name="row" class="row" style="flex-grow: 1; flex-wrap: wrap;">
+            <ui:VisualElement class="flexItemGrow" style="flex-grow: 1;">
+                <ui:VisualElement style="flex-grow: 1; border-left-color: rgb(106, 106, 106); border-right-color: rgb(106, 106, 106); border-top-color: rgb(106, 106, 106); border-bottom-color: rgb(106, 106, 106); border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px;">
+                    <ui:Label tabindex="-1" text="Where the Item should be created" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                    <ui:TextField picking-mode="Ignore" label="Item Directory" value="Assets/ScriptableObjects" name="text-field-item-creation-path" view-data-key="item-creation-directory-path" tooltip="The items you create through this wizard will be created at this location" class="inputField" />
+                </ui:VisualElement>
+                <ui:TextField picking-mode="Ignore" label="ID" name="text-field-item-creation-id" tooltip="A unique ID for your item, this can be any string value. An easy way to work with these IDs is to name them the same as you would your items." class="inputField" />
+                <ui:TextField picking-mode="Ignore" label="Name" name="text-field-item-creation-name" class="inputField" />
+                <ui:TextField picking-mode="Ignore" label="Description" name="text-field-item-creation-description" class="inputField" />
+                <uie:ObjectField label="Inventory Tab" type="Slax.InventorySystem.Runtime.Core.InventoryTabConfigSO, Slax.InventorySystem.Runtime" name="object-field-item-creation-tab" view-data-key="object-field-item-creation-tab" tooltip="Tab on which the item will be displayed" allow-scene-objects="false" class="inputField" />
+                <uie:ObjectField label="Sprite" name="object-field-item-creation-preview-sprite" type="UnityEngine.Sprite, UnityEngine.CoreModule" class="inputField" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Button text="Create" parse-escape-sequences="true" display-tooltip-when-elided="true" name="button-item-creation-create" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="button-item" style="width: auto; height: 50px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0;">
+        <ui:VisualElement name="item-btn-row-container" style="flex-grow: 1; flex-direction: row;">
+            <ui:VisualElement name="button-item-texture" style="flex-grow: 1; width: 50px; height: 50px; background-image: url(&quot;project://database/Assets/Plugins/Slax/Inventory/Sprites/log.png?fileID=2800000&amp;guid=588594924207a4743a796c26d51a3382&amp;type=3#log&quot;); background-color: rgb(255, 255, 255); max-width: 50px; max-height: 50px; min-width: 50px; min-height: 50px; border-left-width: 0; border-bottom-width: 4px; border-top-width: 0; border-right-width: 0;" />
+            <ui:VisualElement name="button-right-content" style="flex-grow: 1; padding-top: 3px; padding-right: 3px; padding-bottom: 3px; padding-left: 3px; justify-content: flex-start;">
+                <ui:Label tabindex="-1" text="Item Name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="button-item-label-name" style="-unity-text-align: middle-left; background-color: rgba(255, 25, 25, 0); font-size: 12px; color: rgb(255, 255, 255); -unity-font-style: bold; padding-left: 4px; justify-content: center; align-items: stretch; padding-top: 4px; padding-right: 4px; padding-bottom: 4px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+                <ui:VisualElement name="container-tab-pill" style="flex-grow: 1; flex-direction: row; align-items: center;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:Button>
+</ui:UXML>

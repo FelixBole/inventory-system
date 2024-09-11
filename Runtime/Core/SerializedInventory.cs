@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     [Serializable]
     public class SerializedInventory

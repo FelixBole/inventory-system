@@ -1,4 +1,4 @@
-namespace Slax.Inventory
+namespace Slax.InventorySystem.Runtime.Core
 {
     /// <summary>
     /// Represents the type of update that was made to the inventory.

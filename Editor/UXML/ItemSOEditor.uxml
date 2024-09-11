@@ -1,0 +1,71 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Template name="container-item-image" src="project://database/Assets/Editor/UXML/container-item-image.uxml?fileID=9197481963319205126&amp;guid=164cd210b70c4f84cbd6c2fe2939a2ad&amp;type=3#container-item-image" />
+    <Style src="project://database/Assets/Editor/USS/InventorySystemStylesheet.uss?fileID=7433441132597879392&amp;guid=43db50cca493058438d2d590d8b4f03d&amp;type=3#InventorySystemStylesheet" />
+    <ui:Button text="Open Editor" parse-escape-sequences="true" display-tooltip-when-elided="true" name="open-editor-button" />
+    <ui:ScrollView scroll-deceleration-rate="0,135" elasticity="0,1" horizontal-scroller-visibility="Hidden" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;">
+        <ui:VisualElement name="window-container" class="container" style="flex-grow: 1;">
+            <ui:VisualElement name="container-recap" class="container background-editor" style="flex-grow: 1; flex-direction: row; height: 64px; max-height: 64px;">
+                <ui:VisualElement name="container-recap-left" class="container" style="flex-grow: 1;">
+                    <ui:Label tabindex="-1" text="Label" parse-escape-sequences="true" display-tooltip-when-elided="true" binding-path="_name" class="label" />
+                    <ui:VisualElement name="container-tabs" style="flex-grow: 1; flex-direction: row; justify-content: flex-start; align-items: stretch;" />
+                </ui:VisualElement>
+                <ui:Instance template="container-item-image" name="container-item-image" />
+            </ui:VisualElement>
+            <ui:VisualElement name="warning-no-tabs" class="container warningBox" style="flex-grow: 1;">
+                <ui:Label tabindex="-1" text="There are no tabs present on your item. Unless you know what you&apos;re doing and do not need any tabs, the Inventory System requires for items to have tabs in order to know where to store them." parse-escape-sequences="true" display-tooltip-when-elided="true" style="white-space: normal;" />
+            </ui:VisualElement>
+            <uie:Toolbar name="toolbar" view-data-key="toolbar-toggle" style="margin-top: 5px;">
+                <uie:ToolbarToggle label="Main Info" name="toolbar-toggle-main" view-data-key="toolbar-toggle-main" class="toolbarToggle" style="flex-shrink: 1;" />
+                <uie:ToolbarToggle label="UI" name="toolbar-toggle-ui" view-data-key="toolbar-toggle-ui" class="toolbarToggle" style="flex-shrink: 1;" />
+                <uie:ToolbarToggle label="Config" name="toolbar-toggle-config" view-data-key="toolbar-toggle-config" class="toolbarToggle" style="flex-shrink: 1;" />
+                <uie:ToolbarToggle label="Extensions" name="toolbar-toggle-extensions" view-data-key="toolbar-toggle-extensions" class="toolbarToggle" style="flex-shrink: 1;" />
+            </uie:Toolbar>
+            <ui:VisualElement name="container-toolbar-result" style="flex-grow: 1;">
+                <ui:VisualElement name="container-main-info" class="container background-editor" style="flex-grow: 1;">
+                    <ui:Label tabindex="-1" text="Main Info" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                    <uie:PropertyField binding-path="_id" />
+                    <uie:PropertyField binding-path="_name" />
+                    <uie:PropertyField binding-path="_description" />
+                </ui:VisualElement>
+                <ui:VisualElement name="container-ui" class="container background-editor" style="flex-grow: 1;">
+                    <ui:Label tabindex="-1" text="UI" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                    <uie:PropertyField binding-path="_previewSprite" name="pf-preview-sprite" />
+                    <uie:PropertyField binding-path="_color" name="pf-color" />
+                    <uie:PropertyField binding-path="_backgroundColor" name="pf-background-color" />
+                    <uie:PropertyField binding-path="_selectedColor" name="pf-selected-color" />
+                </ui:VisualElement>
+                <ui:VisualElement name="container-config" class="container background-editor" style="flex-grow: 1;">
+                    <ui:Label tabindex="-1" text="Config" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                    <uie:PropertyField binding-path="_prefab" />
+                    <uie:PropertyField binding-path="_actionTypes" />
+                    <uie:PropertyField binding-path="_tabConfigs" name="pf-tab-configs" />
+                    <ui:VisualElement name="container-config-stack" class="container" style="flex-grow: 1;">
+                        <ui:Label tabindex="-1" text="Stacking Options" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" style="font-size: 13px;" />
+                        <uie:PropertyField name="pf-is-unique" binding-path="_isUnique" />
+                        <uie:PropertyField binding-path="_isStackable" name="pf-is-stackable" />
+                        <uie:PropertyField binding-path="_stackLimit" name="pf-stack-limit" />
+                        <ui:Button text="Remove Stack Limit" parse-escape-sequences="true" display-tooltip-when-elided="true" name="btn-set-stack-infinite" tooltip="Sets the stack limit to -1 (no limit)" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="container-extensions" class="container background-editor" style="flex-grow: 1;">
+                    <ui:Label tabindex="-1" text="Extensions" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                    <ui:Label tabindex="-1" text="Extensions are optional features of the Inventory System you can use if you want to.&#10;&#10;Setting values here will make them available at all times whenever accessing Item Data but for the system to actually use them, you will need to configure your active InventorySO configuration to use them." parse-escape-sequences="true" display-tooltip-when-elided="true" class="helpbox" style="padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px; background-color: rgba(73, 103, 99, 0.48);" />
+                    <ui:VisualElement name="container-extensions-loot" style="flex-grow: 1;">
+                        <uie:PropertyField binding-path="_minDrops" />
+                        <uie:PropertyField binding-path="_maxDrops" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="container-extensions-weight" style="flex-grow: 1;">
+                        <uie:PropertyField binding-path="_weight" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="container-help" class="container background-editor bordered-editor" style="flex-grow: 1; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px;">
+                <ui:Foldout text="Help" name="foldout-help" view-data-key="foldout-help" tooltip="Toggle for more information about the ItemSO object" class="fixed-foldout-margin" style="display: flex;">
+                    <ui:VisualElement name="container-help-container-label" class="helpbox" style="flex-grow: 1;">
+                        <ui:Label tabindex="-1" text="This scriptable object represents an item in the inventory system.&#10;&#10;It contains all the necessary information to create and manage items for the inventory.&#10;&#10;It will need at least one Tab Configuration (and generally only one) for the inventory system to know where to place it." parse-escape-sequences="true" display-tooltip-when-elided="true" focusable="false" style="white-space: normal;" />
+                    </ui:VisualElement>
+                </ui:Foldout>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:ScrollView>
+</ui:UXML>
