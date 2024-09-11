@@ -1,3 +1,12 @@
+#container-dashboard-bottom .unity-list-view__item:hover {
+    /* Override the default hover color of List view item */
+    background-color: rgba(0, 0, 0, 0);
+}
+
+#container-dashboard-right .unity-list-view__item:hover {
+    background-color: rgba(0, 0, 0, 0);
+}
+
 .sidebarBtn {
     border-left-color: rgb(255, 255, 255);
     border-right-color: rgb(255, 255, 255);

@@ -15,35 +15,51 @@
                     <ui:Button text="Item Gallery" parse-escape-sequences="true" display-tooltip-when-elided="true" name="nav-btn-all-items" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement name="container-main-view" class="editorBg" style="flex-grow: 1; display: flex;">
-                <ui:VisualElement name="container-dashboard" style="flex-grow: 1;">
-                    <ui:VisualElement name="container-dashboard-top" class="row container" style="flex-grow: 1; flex-wrap: wrap;">
-                        <ui:VisualElement name="dashboard-items" class="dashboardPane" style="flex-grow: 1;">
-                            <ui:Instance template="PillTab" name="PillTab" style="display: none;" />
-                            <uie:ToolbarSearchField name="searchfield-items" />
-                            <ui:ListView name="item-list-sneakpeak" focusable="false" fixed-item-height="50" view-data-key="item-list-sneakpeak" />
+            <ui:ScrollView scroll-deceleration-rate="0,135" elasticity="0,1" name="main-content" view-data-key="main-content-scroll" style="flex-grow: 1;">
+                <ui:VisualElement name="container-main-view" class="editorBg" style="flex-grow: 1; display: flex;">
+                    <ui:VisualElement name="container-dashboard" style="flex-grow: 1; flex-direction: row; flex-wrap: wrap;">
+                        <ui:VisualElement name="container-dashboard-left" style="flex-grow: 1;">
+                            <ui:VisualElement name="container-dashboard-top" class="row container" style="flex-grow: 1; flex-wrap: wrap;">
+                                <ui:VisualElement name="dashboard-items" class="dashboardPane" style="flex-grow: 1;">
+                                    <ui:Instance template="PillTab" name="PillTab" style="display: none;" />
+                                    <uie:ToolbarSearchField name="searchfield-items" />
+                                    <ui:ListView name="item-list-sneakpeak" focusable="false" fixed-item-height="50" view-data-key="item-list-sneakpeak" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="dashboard-databases" class="dashboardPane" style="flex-grow: 1;">
+                                    <ui:Label tabindex="-1" text="Databases" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                                    <ui:VisualElement name="dashboard-databases-list" class="row" style="flex-grow: 1; flex-shrink: 1;" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                            <ui:VisualElement name="container-dashboard-bottom" class="row container" style="flex-grow: 1;">
+                                <ui:VisualElement name="dashboard-inventories-list" class="dashboardPane" style="flex-grow: 1;">
+                                    <ui:Label tabindex="-1" text="Inventories" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                                    <uie:ToolbarSearchField name="dashboard-inventories-search" />
+                                    <ui:ListView name="list-view-dashboard-inventories" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="dashboard-action-types-list" class="dashboardPane" style="flex-grow: 1;">
+                                    <ui:Label tabindex="-1" text="Action Types" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Label" class="label" />
+                                    <uie:ToolbarSearchField />
+                                    <ui:ListView name="list-view-dashboard-action-types" />
+                                </ui:VisualElement>
+                            </ui:VisualElement>
                         </ui:VisualElement>
-                        <ui:VisualElement name="dashboard-databases" class="dashboardPane" style="flex-grow: 1;">
-                            <ui:Label tabindex="-1" text="Databases" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
-                            <ui:VisualElement name="dashboard-databases-list" class="row" style="flex-grow: 1; flex-shrink: 1;" />
+                        <ui:VisualElement name="container-dashboard-right" class="container" style="flex-grow: 1; height: auto;">
+                            <ui:VisualElement name="dashboard-inventory-tab-list" class="dashboardPane" style="flex-grow: 1;">
+                                <ui:Label tabindex="-1" text="Inventory Tabs" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                                <uie:ToolbarSearchField />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="dashboard-slot-unlock-list" class="dashboardPane" style="flex-grow: 1;">
+                                <ui:Label tabindex="-1" text="Slot Unlocks" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
+                                <uie:ToolbarSearchField />
+                            </ui:VisualElement>
                         </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:VisualElement name="container-dashboard-bottom" class="container row" style="flex-grow: 1;">
-                        <ui:VisualElement name="dashboard-inventories-list" class="container dashboardPane" style="flex-grow: 1;">
-                            <ui:Label tabindex="-1" text="Inventories" parse-escape-sequences="true" display-tooltip-when-elided="true" class="label" />
-                            <uie:ToolbarSearchField name="dashboard-inventories-search" />
-                            <ui:ListView name="list-view-dashboard-inventories" />
-                        </ui:VisualElement>
-                        <ui:VisualElement name="dashboard-action-types-list" class="container dashboardPane" style="flex-grow: 1;">
-                            <ui:Label tabindex="-1" text="Action Types" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Label" class="label" />
-                            <ui:ListView name="list-view-dashboard-action-types" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
+                    <ui:Instance template="ItemCreationWizardEditorWindow" name="ItemCreationWizardEditorWindow" />
+                    <ui:VisualElement name="container-item-details" style="flex-grow: 1; display: none;" />
+                    <ui:VisualElement name="container-all-items" style="flex-grow: 1;" />
+                    <ui:VisualElement name="container-inventory-details" style="flex-grow: 1; display: none;" />
                 </ui:VisualElement>
-                <ui:Instance template="ItemCreationWizardEditorWindow" name="ItemCreationWizardEditorWindow" />
-                <ui:VisualElement name="container-item-details" style="flex-grow: 1; display: none;" />
-                <ui:VisualElement name="container-all-items" style="flex-grow: 1;" />
-            </ui:VisualElement>
+            </ui:ScrollView>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

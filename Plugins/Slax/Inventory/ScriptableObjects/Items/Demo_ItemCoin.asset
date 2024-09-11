@@ -19,9 +19,9 @@ MonoBehaviour:
   _actionTypes: []
   _tabConfigs:
   - {fileID: 11400000, guid: 0216932afb39dfa46a9339df6bd3653b, type: 2}
-  _color: {r: 1, g: 0.88289475, b: 0.1745283, a: 1}
-  _backgroundColor: {r: 0.8392157, g: 0.5530212, b: 0.3372549, a: 1}
-  _selectedColor: {r: 0.9716981, g: 0.6003665, b: 0.16958882, a: 1}
+  _color: {r: 0.3252047, g: 0.64349705, b: 0.7924528, a: 1}
+  _backgroundColor: {r: 0.58348167, g: 0.8301887, b: 0.676803, a: 1}
+  _selectedColor: {r: 0, g: 0, b: 0, a: 1}
   _prefab: {fileID: 0}
   _isStackable: 1
   _stackLimit: -1

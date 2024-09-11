@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2024-09-11
+### Editor Tooling update
+- Add central management hub for inventory assets
+- Add item gallery with quick multi item operations
+- Add quick lookup / search of items from the editor window
+- Add dependencies to my UI Toolkit lib for faster Editor edition
+
 ## [1.0.0] - 2024-09-02
 Complete revamp of the Inventory System.
 ### Added

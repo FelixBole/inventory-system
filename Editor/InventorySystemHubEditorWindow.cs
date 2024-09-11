@@ -2,7 +2,6 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
-using System.Collections.Generic;
 using Slax.InventorySystem.Runtime.Core;
 using Slax.Utils.Editor;
 using Slax.UIToolkit.Editor;
@@ -13,29 +12,31 @@ namespace Slax.InventorySystem.Editor
     {
         [SerializeField] VisualTreeAsset _uxml = default;
         [SerializeField] VisualTreeAsset _itemBtnUxml = default;
-        [SerializeField] VisualTreeAsset _inventoryListItemUxml = default;
-        [SerializeField] VisualTreeAsset _actionTypeListItemUxml = default;
 
         static InventorySystemHubEditorWindow _window;
 
         ItemCreationWizardEditor _itemCreationWizard;
 
-        ListView _itemListSneakPeak;
         VisualElement _dashboardContainer;
         VisualElement _itemDetailContainer;
-        VisualElement _allItemsView;
+        VisualElement _inventoryDetailContainer;
+        VisualElement _actionTypeDetailContainer;
+        VisualElement _inventoryTabDetailContainer;
+        VisualElement _slotUnlockDetailContainer;
+        SerializedItemGallery _itemGallery;
 
-        #region Serialized Assets
-        protected SerializedObject _selectedItem; // The item being edited in the ItemDetail view.
-        protected SerializedObject _selectedItemDatabase;
-        protected List<SerializedObject> _serializedInventories = new List<SerializedObject>();
-        protected List<SerializedObject> _serializedItems = new List<SerializedObject>();
-        protected List<SerializedObject> _serializedInventoryTabs = new List<SerializedObject>();
-        protected List<SerializedObject> _serializedItemActionTypes = new List<SerializedObject>();
-        protected List<SerializedObject> _serializedItemDatabases = new List<SerializedObject>();
-        protected List<SerializedObject> _serializedInventorySaveSystems = new List<SerializedObject>();
-        protected List<SerializedObject> _serializedSlotUnlockStates = new List<SerializedObject>();
-        #endregion
+        InventorySystemAssetLoader _assetLoader;
+        SerializedItemList _serializedItemList;
+        SerializedInventoryList _serializedInventoryList;
+        SerializedActionTypeList _serializedActionsList;
+        SerializedInventoryTabList _serializedInventoryTabList;
+
+        SerializedObject _selectedItem; // The item being edited in the ItemDetail view.
+        SerializedObject _selectedItemDatabase;
+        SerializedObject _selectedInventory;
+        SerializedObject _selectedActionType;
+        SerializedObject _selectedInventoryTab;
+        SerializedObject _selectedSlotUnlockState;
 
         [MenuItem("Window/Slax/Inventory/Inventory System Hub")]
         public static void ShowWindow()
@@ -45,298 +46,128 @@ namespace Slax.InventorySystem.Editor
             _window.Show();
         }
 
+        void OnEnable()
+        {
+            _assetLoader = new InventorySystemAssetLoader(loadAssetsOnCreation: true);
+        }
+
         public void CreateGUI()
         {
-            LoadAssets();
-
             VisualElement uxml = _uxml.CloneTree();
             rootVisualElement.Add(uxml);
 
-            _itemCreationWizard = new ItemCreationWizardEditor();
-            _itemCreationWizard.Setup(rootVisualElement);
+            _itemCreationWizard = new ItemCreationWizardEditor(rootVisualElement);
             _itemCreationWizard.Hide();
 
-            SetupItemSearch();
-
-            _itemDetailContainer = rootVisualElement.Q<VisualElement>("container-item-details");
             _dashboardContainer = rootVisualElement.Q<VisualElement>("container-dashboard");
-            _allItemsView = rootVisualElement.Q<VisualElement>("container-all-items");
 
-            _itemListSneakPeak = rootVisualElement.Q<ListView>("item-list-sneakpeak");
+            RegisterDetailContainers();
+
+            var mainContent = rootVisualElement.Q<VisualElement>("main-content");
+
+            _itemGallery = new SerializedItemGallery(_assetLoader.SerializedItems);
+            _itemGallery.Hide();
+            mainContent.Add(_itemGallery.GetContainer());
+
+            var dashboardItems = rootVisualElement.Q<VisualElement>("dashboard-items");
+            _serializedItemList = new SerializedItemList(dashboardItems, HandleItemClicked, _itemBtnUxml);
+
+            _serializedInventoryList = new SerializedInventoryList(rootVisualElement.Q<VisualElement>("dashboard-inventories-list"), HandleInventoryEditClicked);
+
+            var listViewActionTypes = rootVisualElement.Q<VisualElement>("dashboard-action-types-list");
+            _serializedActionsList = new SerializedActionTypeList(listViewActionTypes, HandleActionEditClicked);
+
+            _serializedInventoryTabList = new SerializedInventoryTabList(rootVisualElement.Q<VisualElement>("dashboard-inventory-tab-list"), HandleInventoryTabClicked);
+
+            var serializedSlotUnlockList = new SerializedSlotUnlockList(rootVisualElement.Q<VisualElement>("dashboard-slot-unlock-list"), HandleSlotUnlockClicked);
 
             var navBtnMain = rootVisualElement.Q<Button>("nav-btn-main");
             navBtnMain.clicked += () => ShowMainView();
             var navBtnCreateItem = rootVisualElement.Q<Button>("nav-btn-create-item");
-            navBtnCreateItem.clicked += () => ToggleItemCreationView();
+            navBtnCreateItem.clicked += () => ShowView(() => _itemCreationWizard.Show());
 
             var button = rootVisualElement.Q<Button>("refresh-btn");
             button.clicked += () =>
             {
-                LoadAssets();
-                PopulateItemListSneakPeak();
+                _assetLoader.Reload();
+                _serializedItemList.Reload();
+                _serializedInventoryList.Reload();
+                _serializedActionsList.Reload();
+                _serializedInventoryTabList.Reload();
+                serializedSlotUnlockList.Reload();
+
                 PopulateItemDatabaseListSneakPeak();
-                PopulateInventoryList();
-                PopulateActionTypes();
                 ShowMainView();
             };
 
-            PopulateInventoryList();
-            PopulateActionTypes();
-            PopulateItemListSneakPeak();
+            _serializedItemList.DrawList(_assetLoader.SerializedItems);
+            _serializedInventoryList.DrawList(_assetLoader.SerializedInventories);
+            _serializedActionsList.DrawList(_assetLoader.SerializedItemActionTypes);
+            _serializedInventoryTabList.DrawList(_assetLoader.SerializedInventoryTabs);
+            serializedSlotUnlockList.DrawList(_assetLoader.SerializedSlotUnlockStates);
             PopulateItemDatabaseListSneakPeak();
 
             // TODO: tmp location of this, should be in its own method
             var allItemsBtn = rootVisualElement.Q<Button>("nav-btn-all-items");
-            allItemsBtn.clicked += () => RenderAllItemsView();
+            allItemsBtn.clicked += () => HandleItemGalleryClicked();
+        }
+
+        void RegisterDetailContainers()
+        {
+            _itemDetailContainer = rootVisualElement.Q<VisualElement>("container-item-details");
+            _inventoryDetailContainer = rootVisualElement.Q<VisualElement>("container-inventory-details");
+            _actionTypeDetailContainer = rootVisualElement.Q<VisualElement>("container-action-type-details");
+            _inventoryTabDetailContainer = rootVisualElement.Q<VisualElement>("container-inventory-tab-details");
+            _slotUnlockDetailContainer = rootVisualElement.Q<VisualElement>("container-slot-unlock-details");
         }
 
         void HideAll()
         {
             _dashboardContainer.style.display = DisplayStyle.None;
             _itemDetailContainer.style.display = DisplayStyle.None;
-            _allItemsView.style.display = DisplayStyle.None;
+            _inventoryDetailContainer.style.display = DisplayStyle.None;
+            _slotUnlockDetailContainer.style.display = DisplayStyle.None;
+            _actionTypeDetailContainer.style.display = DisplayStyle.None;
+            _inventoryTabDetailContainer.style.display = DisplayStyle.None;
+        
+            _itemGallery.Hide();
             _itemCreationWizard.Hide();
+        }
+
+        void ShowView(System.Action act)
+        {
+            HideAll();
+            act();
         }
 
         void ShowMainView()
         {
             if (_dashboardContainer == null) return;
-            HideAll();
-            _dashboardContainer.style.display = DisplayStyle.Flex;
+            ShowView(() => _dashboardContainer.style.display = DisplayStyle.Flex);
         }
 
-        void ShowItemDetailView()
-        {
-            if (_itemDetailContainer == null) return;
-            HideAll();
-            _itemDetailContainer.style.display = DisplayStyle.Flex;
-            RenderItemDetailView();
-        }
-
-        void SetupItemSearch()
-        {
-            var searchField = rootVisualElement.Q<ToolbarSearchField>("searchfield-items");
-            searchField.RegisterCallback<ChangeEvent<string>>(evt =>
-            {
-                string search = evt.newValue;
-                if (string.IsNullOrEmpty(search))
-                {
-                    PopulateItemListSneakPeak();
-                    return;
-                }
-
-                List<SerializedObject> searchResults = new List<SerializedObject>();
-                foreach (SerializedObject item in _serializedItems)
-                {
-                    if (item.FindProperty("_name").stringValue.ToLower().Contains(search.ToLower()))
-                    {
-                        searchResults.Add(item);
-                    }
-                }
-
-                PopulateItemListSneakPeak(searchResults);
-            });
-        }
-
-        void ToggleItemCreationView()
-        {
-            HideAll();
-            _itemCreationWizard.Show();
-        }
-
-        void PopulateItemListSneakPeak(List<SerializedObject> items = null)
-        {
-            _itemListSneakPeak.Clear();
-
-            if (items == null)
-            {
-                items = _serializedItems;
-            }
-
-            if (items.Count == 0) return;
-
-            // Set the number of items in the list
-            _itemListSneakPeak.itemsSource = items;
-
-            // Define the item creation function
-            _itemListSneakPeak.makeItem = () =>
-            {
-                VisualElement itemBtnUxml = _itemBtnUxml.CloneTree();
-                VisualElement itemBtn = itemBtnUxml.Q<VisualElement>("button-item");
-                return itemBtn;
-            };
-
-            // Define the data binding function
-            _itemListSneakPeak.bindItem = (element, index) =>
-            {
-                if (index >= items.Count || index < 0) return;
-
-                SerializedObject item = items[index];
-
-                if (item == null) return;
-
-                Sprite itemSprite = item.FindProperty("_previewSprite").objectReferenceValue as Sprite;
-                Color itemBackgroundColor = item.FindProperty("_backgroundColor").colorValue;
-
-                var btn = element as Button;
-
-                var label = btn.Q<Label>("button-item-label-name");
-                label.text = item.FindProperty("_name").stringValue;
-
-                int tabConfigs = item.FindProperty("_tabConfigs").arraySize;
-                var containerTabPill = btn.Q<VisualElement>("container-tab-pill");
-                containerTabPill.Clear();
-
-                for (int i = 0; i < tabConfigs; i++)
-                {
-                    InventoryTabConfigSO tab = item.FindProperty("_tabConfigs").GetArrayElementAtIndex(i).objectReferenceValue as InventoryTabConfigSO;
-                    if (tab != null)
-                    {
-                        Pill pill = new Pill();
-                        pill.labelText = tab.name;
-                        containerTabPill?.Add(pill);
-                    }
-                }
-
-                if (itemSprite != null)
-                {
-                    var img = btn.Q<VisualElement>("button-item-texture");
-                    img.style.backgroundImage = itemSprite.texture;
-                    img.style.backgroundColor = itemBackgroundColor;
-                }
-
-                // Set the click event
-                btn.clicked += () =>
-                {
-                    _selectedItem = item;
-                    ShowItemDetailView();
-                };
-            };
-
-            // Optional: Set item height if necessary
-            _itemListSneakPeak.fixedItemHeight = 50;
-        }
-
+        // TODO move out
         void PopulateItemDatabaseListSneakPeak()
         {
             var itemDatabaseList = rootVisualElement.Q<VisualElement>("dashboard-databases-list");
 
             itemDatabaseList.Clear();
 
-            if (_serializedItemDatabases.Count == 0)
-            {
-                itemDatabaseList.Add(AlertBox.Warning("No Item Databases found in the project."));
-                return;
-            }
+            if (_assetLoader.SerializedItemDatabases.Count == 0) return;
 
-            for (int i = 0; i < _serializedItemDatabases.Count; i++)
+            for (int i = 0; i < _assetLoader.SerializedItemDatabases.Count; i++)
             {
-                var db = _serializedItemDatabases[i];
+                var db = _assetLoader.SerializedItemDatabases[i];
                 var dbContainer = new ContentInfoButton();
                 dbContainer.titleText = db.targetObject.name;
                 dbContainer.infoText = db.FindProperty("_items").arraySize.ToString() + " items";
                 dbContainer.clicked += () =>
                 {
                     _selectedItemDatabase = db;
-                    ShowItemDatabaseDetailView();	
+                    ShowItemDatabaseDetailView();
                 };
                 itemDatabaseList.Add(dbContainer);
             }
-        }
-
-        void PopulateInventoryList()
-        {
-            ListView inventoryList = rootVisualElement.Q<ListView>("list-view-dashboard-inventories");
-
-            inventoryList.Clear();
-
-            if (_serializedInventories.Count == 0)
-            {
-                inventoryList.Add(AlertBox.Warning("No Inventories found in the project."));
-                return;
-            }
-
-            inventoryList.itemsSource = _serializedInventories;
-
-            Debug.Log(_inventoryListItemUxml);
-
-            inventoryList.makeItem = () =>
-            {
-                VisualElement itemBtnUxml = _inventoryListItemUxml.CloneTree();
-                return itemBtnUxml;
-            };
-
-            inventoryList.bindItem = (element, index) =>
-            {
-                if (index >= _serializedInventories.Count || index < 0) return;
-
-                SerializedObject inventory = _serializedInventories[index];
-
-                if (inventory == null) return;
-
-                InventorySO inv = inventory.targetObject as InventorySO;
-
-                if (inv == null) return;
-
-                var title = element.Q<Label>("InventoryListElement__title");
-                title.text = inv.Name;
-
-                var tabs = element.Q<Label>("InventoryListElement__tabs");
-                tabs.text = inv.TabConfigs.Count + " tabs";
-
-                var editBtn = element.Q<Button>("InventoryListElement__controls-edit");
-                editBtn.clicked += () => {
-                    Debug.Log("Edit Inventory: " + inv.Name);
-                };
-
-                var deleteBtn = element.Q<Button>("InventoryListElement__controls-delete");
-                deleteBtn.clicked += () => {
-                    Debug.Log("Delete Inventory: " + inv.Name);
-                };
-            };
-
-            inventoryList.fixedItemHeight = 60;
-        }
-
-        void PopulateActionTypes()
-        {
-            ListView actionTypesList = rootVisualElement.Q<ListView>("list-view-dashboard-action-types");
-
-            actionTypesList.Clear();
-
-            if (_serializedItemActionTypes.Count == 0)
-            {
-                actionTypesList.Add(AlertBox.Warning("No Item Action Types found in the project."));
-                return;
-            }
-
-            actionTypesList.itemsSource = _serializedItemActionTypes;
-
-            actionTypesList.makeItem = () => _actionTypeListItemUxml.CloneTree();
-            
-
-            actionTypesList.bindItem = (element, index) =>
-            {
-                if (index >= _serializedItemActionTypes.Count || index < 0) return;
-
-                SerializedObject actionType = _serializedItemActionTypes[index];
-
-                if (actionType == null) return;
-
-                ItemActionTypeSO type = actionType.targetObject as ItemActionTypeSO;
-
-                if (type == null) return;
-
-                var title = element.Q<Label>("ActionTypeListItem__title");
-                title.text = type.Name;
-
-                var deleteBtn = element.Q<Button>("ActionTypeListItem__delete");
-                deleteBtn.clicked += () => {
-                    Debug.Log("Delete Action Type: " + type.Name);
-                };
-            };
-
-            actionTypesList.fixedItemHeight = 35;
         }
 
         void ShowItemDatabaseDetailView()
@@ -344,39 +175,6 @@ namespace Slax.InventorySystem.Editor
             HideAll();
             _itemDetailContainer.style.display = DisplayStyle.Flex;
             RenderItemDatabaseDetailView();
-        }
-
-        // TODO Put in its own class
-        void RenderAllItemsView()
-        {
-            LoadAssets();
-            HideAll();
-            _allItemsView.Clear();
-            _allItemsView.style.display = DisplayStyle.Flex;
-            _allItemsView.style.flexDirection = FlexDirection.Row;
-            _allItemsView.style.flexWrap = Wrap.Wrap;
-
-            // Create image grid of all items
-            foreach (SerializedObject item in _serializedItems)
-            {
-                if (item == null) continue;
-
-                Sprite itemSprite = item.FindProperty("_previewSprite").objectReferenceValue as Sprite;
-                Color itemBackgroundColor = item.FindProperty("_backgroundColor").colorValue;
-                Color selectedColor = item.FindProperty("_selectedColor").colorValue;
-                Color tintColor = item.FindProperty("_color").colorValue;
-
-                var ve = new VisualElement();
-                ve.style.width = 50;
-                ve.style.height = 50;
-                ve.style.borderBottomColor = selectedColor;
-                ve.style.borderBottomWidth = 2;
-                ve.style.backgroundColor = itemBackgroundColor;
-                ve.style.unityBackgroundImageTintColor = tintColor;
-                ve.style.backgroundImage = itemSprite.texture;
-
-                _allItemsView.Add(ve);
-            }
         }
 
         void RenderItemDatabaseDetailView()
@@ -393,7 +191,7 @@ namespace Slax.InventorySystem.Editor
                 if (selected == null) return;
                 AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(selected));
                 _selectedItemDatabase = null;
-                LoadAssets();
+                _assetLoader.ReloadItemDatabases();
                 PopulateItemDatabaseListSneakPeak();
                 ShowMainView();
             }
@@ -417,8 +215,8 @@ namespace Slax.InventorySystem.Editor
                 if (selected == null) return;
                 AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(selected));
                 _selectedItem = null;
-                LoadAssets();
-                PopulateItemListSneakPeak();
+                _assetLoader.ReloadItems();
+                _serializedItemList.Reload();
                 ShowMainView();
             }
 
@@ -427,158 +225,74 @@ namespace Slax.InventorySystem.Editor
             _itemDetailContainer.Add(dialogBtn);
         }
 
-        /// **********************************************************************************************
-        /// *                                      ASSET LOADING                                         *
-        /// **********************************************************************************************
-
-
-        #region Load Assets
-        /// <summary>
-        /// Loads all Inventory Related Assets in the project.
-        /// </summary>
-        protected void LoadAssets()
+        void HandleItemGalleryClicked()
         {
-            _serializedInventories = GetInventoriesInProject();
-            _serializedItems = GetItemsInProject();
-            _serializedInventoryTabs = GetInventoryTabsInProject();
-            _serializedItemActionTypes = GetItemActionTypesInProject();
-            _serializedItemDatabases = GetItemDatabasesInProject();
-            _serializedInventorySaveSystems = GetInventorySaveSystemsInProject();
-            _serializedSlotUnlockStates = GetSlotUnlockStatesInProject();
-        }
-
-        /// <summary>
-        /// Returns a list of all InventorySO assets in the project.
-        /// </summary>
-        protected List<SerializedObject> GetInventoriesInProject()
-        {
-            List<SerializedObject> inventories = new List<SerializedObject>();
-
-            string[] guids = AssetDatabase.FindAssets("t:InventorySO");
-
-            foreach (string guid in guids)
+            HideAll();
+            _itemGallery.DrawWithNewItems(_assetLoader.ReloadItems(), (serializedItem) =>
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                InventorySO inventory = AssetDatabase.LoadAssetAtPath<InventorySO>(path);
-                inventories.Add(new SerializedObject(inventory));
-            }
-
-            return inventories;
+                HandleItemClicked(serializedItem);
+            });
         }
 
-        /// <summary>
-        /// Returns a list of all ItemSO assets in the project.
-        /// </summary>
-        protected List<SerializedObject> GetItemsInProject()
+        void HandleItemClicked(SerializedObject item)
         {
-            List<SerializedObject> items = new List<SerializedObject>();
+            _selectedItem = item;
+            if (_itemDetailContainer == null) return;
 
-            string[] guids = AssetDatabase.FindAssets("t:ItemSO");
-
-            foreach (string guid in guids)
+            ShowView(() =>
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                ItemSO item = AssetDatabase.LoadAssetAtPath<ItemSO>(path);
-                items.Add(new SerializedObject(item));
-            }
-
-            return items;
+                _itemDetailContainer.style.display = DisplayStyle.Flex;
+                RenderItemDetailView();
+            });
         }
 
-        /// <summary>
-        /// Returns a list of all InventoryTabConfigSO assets in the project.
-        /// </summary>
-        protected List<SerializedObject> GetInventoryTabsInProject()
+        void HandleInventoryEditClicked(SerializedObject inventory)
         {
-            List<SerializedObject> tabs = new List<SerializedObject>();
+            _selectedInventory = inventory;
+            if (_inventoryDetailContainer == null) return;
 
-            string[] guids = AssetDatabase.FindAssets("t:InventoryTabConfigSO");
-
-            foreach (string guid in guids)
+            ShowView(() =>
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                InventoryTabConfigSO tab = AssetDatabase.LoadAssetAtPath<InventoryTabConfigSO>(path);
-                tabs.Add(new SerializedObject(tab));
-            }
-
-            return tabs;
+                _inventoryDetailContainer.style.display = DisplayStyle.Flex;
+                _inventoryDetailContainer.Clear();
+                _inventoryDetailContainer.Add(new InspectorElement(_selectedInventory));
+            });
         }
 
-        /// <summary>
-        /// Returns a list of all ItemActionTypeSO assets in the project.
-        /// </summary>
-        protected List<SerializedObject> GetItemActionTypesInProject()
+        void HandleActionEditClicked(SerializedObject act)
         {
-            List<SerializedObject> actionTypes = new List<SerializedObject>();
-
-            string[] guids = AssetDatabase.FindAssets("t:ItemActionTypeSO");
-
-            foreach (string guid in guids)
+            _selectedActionType = act;
+            if (_selectedActionType == null) return;
+            ShowView(() =>
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                ItemActionTypeSO actionType = AssetDatabase.LoadAssetAtPath<ItemActionTypeSO>(path);
-                actionTypes.Add(new SerializedObject(actionType));
-            }
-
-            return actionTypes;
+                _actionTypeDetailContainer.style.display = DisplayStyle.Flex;
+                _actionTypeDetailContainer.Clear();
+                _actionTypeDetailContainer.Add(new InspectorElement(_selectedActionType));
+            });
         }
 
-        /// <summary>
-        /// Returns a list of all ItemDatabaseSO assets in the project.
-        /// </summary>
-        protected List<SerializedObject> GetItemDatabasesInProject()
+        void HandleInventoryTabClicked(SerializedObject tab)
         {
-            List<SerializedObject> databases = new List<SerializedObject>();
-
-            string[] guids = AssetDatabase.FindAssets("t:ItemDatabaseSO");
-
-            foreach (string guid in guids)
+            _selectedInventoryTab = tab;
+            if (_selectedInventoryTab == null) return;
+            ShowView(() =>
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                ItemDatabaseSO database = AssetDatabase.LoadAssetAtPath<ItemDatabaseSO>(path);
-                databases.Add(new SerializedObject(database));
-            }
-
-            return databases;
+                _inventoryTabDetailContainer.style.display = DisplayStyle.Flex;
+                _inventoryTabDetailContainer.Clear();
+                _inventoryTabDetailContainer.Add(new InspectorElement(_selectedInventoryTab));
+            });
         }
 
-        /// <summary>
-        /// Returns a list of all InventorySaveSystemSO assets in the project.
-        /// </summary>
-        protected List<SerializedObject> GetInventorySaveSystemsInProject()
+        void HandleSlotUnlockClicked(SerializedObject slotUnlock)
         {
-            List<SerializedObject> saveSystems = new List<SerializedObject>();
-
-            string[] guids = AssetDatabase.FindAssets("t:InventorySaveSystemSO");
-
-            foreach (string guid in guids)
+            _selectedSlotUnlockState = slotUnlock;
+            if (_selectedSlotUnlockState == null) return;
+            ShowView(() =>
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                InventorySaveSystemSO saveSystem = AssetDatabase.LoadAssetAtPath<InventorySaveSystemSO>(path);
-                saveSystems.Add(new SerializedObject(saveSystem));
-            }
-
-            return saveSystems;
+                _slotUnlockDetailContainer.style.display = DisplayStyle.Flex;
+                _slotUnlockDetailContainer.Clear();
+                _slotUnlockDetailContainer.Add(new InspectorElement(_selectedSlotUnlockState));
+            });
         }
-
-        /// <summary>
-        /// Returns a list of all SlotUnlockStateSO assets in the project.
-        /// </summary>
-        protected List<SerializedObject> GetSlotUnlockStatesInProject()
-        {
-            List<SerializedObject> states = new List<SerializedObject>();
-
-            string[] guids = AssetDatabase.FindAssets("t:SlotUnlockStateSO");
-
-            foreach (string guid in guids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                SlotUnlockStateSO state = AssetDatabase.LoadAssetAtPath<SlotUnlockStateSO>(path);
-                states.Add(new SerializedObject(state));
-            }
-
-            return states;
-        }
-        #endregion
     }
 }

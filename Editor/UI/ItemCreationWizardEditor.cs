@@ -21,7 +21,7 @@ namespace Slax.InventorySystem.Editor
         protected ObjectField _itemCreationTabConfigField;
         protected string _itemCreationPath = "Assets/InventorySystem/Items";
 
-        public void Setup(VisualElement element)
+        public ItemCreationWizardEditor(VisualElement element)
         {
             _itemCreationContainer = element.Q<VisualElement>("container-item-creation");
             _itemCreationPathField = _itemCreationContainer.Q<TextField>("text-field-item-creation-path");
